@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS ====================
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders         Order[]        @relation("CreatedByUser")
+  orderHistories OrderHistory[] @relation("HistoryByUser")
+
+  @@map("users")
+}
+
+// ==================== CUSTOMERS ====================
+model Customer {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  email     String?
+  phone     String?
+  address   String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders Order[]
+
+  @@map("customers")
+}
+
+// ==================== CATEGORIES ====================
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Self relation — parent/child category
+  parentId   Int?
+  parent     Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children   Category[] @relation("CategoryChildren")
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// ==================== PRODUCTS ====================
+model Product {
+  id            Int      @id @default(autoincrement())
+  title         String
+  sku           String   @unique
+  description   String?
+  image         String?
+  price         Decimal  @db.Decimal(10, 2)
+  stockQuantity Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// ==================== ORDERS ====================
+model Order {
+  id         Int      @id @default(autoincrement())
+  orderCode  String   @unique
+  totalPrice Decimal  @db.Decimal(10, 2)
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  createdById Int
+  createdBy   User @relation("CreatedByUser", fields: [createdById], references: [id])
+
+  orderItems     OrderItem[]
+  orderHistories OrderHistory[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+// ==================== ORDER ITEMS ====================
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  // Relations
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ==================== ORDER HISTORY ====================
+model OrderHistory {
+  id          Int      @id @default(autoincrement())
+  action      String   // ORDER_CREATED, ORDER_CANCELLED, etc.
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id])
+
+  createdById Int
+  createdBy   User @relation("HistoryByUser", fields: [createdById], references: [id])
+
+  @@map("order_histories")
+}
