@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { AllExceptionsFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,7 +13,10 @@ async function bootstrap() {
 
   // CORS — cho phép frontend gọi API
   app.enableCors({
-    origin: ['http://localhost:5173'], // Vite dev port
+    origin: [
+      'http://localhost:5173',
+      process.env.FRONTEND_URL || '', // thêm dòng này
+    ].filter(Boolean),
     credentials: true,
   });
 
@@ -27,6 +31,9 @@ async function bootstrap() {
       transform: true,       // auto convert type
     }),
   );
+
+  // Global exception filter — bắt tất cả lỗi, trả về JSON chuẩn
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Swagger UI tại /api/docs
   const config = new DocumentBuilder()
