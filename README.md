@@ -67,6 +67,8 @@ A full-stack CRM system for managing orders, products, customers, and categories
 ---
 
 ## 📁 Project Structure
+
+```text
 crm-system/
 ├── frontend/                 # React application
 │   ├── src/
@@ -80,29 +82,31 @@ crm-system/
 │   └── vercel.json
 │
 └── backend/                  # NestJS application
-├── src/
-│   ├── auth/             # JWT authentication
-│   ├── users/            # User management
-│   ├── categories/       # Category CRUD
-│   ├── products/         # Product CRUD
-│   ├── customers/        # Customer CRUD
-│   ├── orders/           # Order management
-│   ├── dashboard/        # Stats & analytics
-│   ├── prisma/           # Database service
-│   ├── guards/           # JWT guard & strategy
-│   └── filters/          # Exception filters
-└── prisma/
-└── schema.prisma     # Database schema
+    ├── src/
+    │   ├── auth/             # JWT authentication
+    │   ├── users/            # User management
+    │   ├── categories/       # Category CRUD
+    │   ├── products/         # Product CRUD
+    │   ├── customers/        # Customer CRUD
+    │   ├── orders/           # Order management
+    │   ├── dashboard/        # Stats & analytics
+    │   ├── prisma/           # Database service
+    │   ├── guards/           # JWT guard & strategy
+    │   └── filters/          # Exception filters
+    └── prisma/
+        └── schema.prisma     # Database schema
+```
 ---
 
 ## 🗄️ Database Schema
-users          → admins who manage the CRM
-customers      → customers who place orders
-categories     → product categories (with parent/child)
-products       → products with stock tracking
-orders         → orders linked to customers
-order_items    → products within each order
-order_histories → audit log for order changes
+
+- **users**          → admins who manage the CRM
+- **customers**      → customers who place orders
+- **categories**     → product categories (with parent/child)
+- **products**       → products with stock tracking
+- **orders**         → orders linked to customers
+- **order_items**    → products within each order
+- **order_histories** → audit log for order changes
 ---
 
 ## 🚀 Local Development
@@ -144,6 +148,8 @@ Full API docs available at:
 `https://crm-system-2026-5nqq.onrender.com/api/docs`
 
 ### Key Endpoints
+
+```text
 POST   /api/auth/register
 POST   /api/auth/login
 GET    /api/categories
@@ -164,6 +170,7 @@ GET    /api/orders/:id
 PATCH  /api/orders/:id
 PATCH  /api/orders/:id/cancel
 GET    /api/dashboard/summary
+```
 
 ---
 
