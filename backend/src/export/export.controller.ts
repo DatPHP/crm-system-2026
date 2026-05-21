@@ -6,7 +6,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../guards/jwt.guard';
