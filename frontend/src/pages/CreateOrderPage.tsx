@@ -23,14 +23,16 @@ export default function CreateOrderPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
 
+  // Customers query
   const { data: customers = [] } = useQuery({
     queryKey: ["customers"],
-    queryFn: customerService.getAll,
+    queryFn: () => customerService.getAll(), // bỏ tham số
   });
 
+  // Products query
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
-    queryFn: productService.getAll,
+    queryFn: () => productService.getAll(), // bỏ tham số
   });
 
   const createMutation = useMutation({

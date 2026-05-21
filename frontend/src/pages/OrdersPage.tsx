@@ -37,16 +37,6 @@ export default function OrdersPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || "Error"),
   });
 
-  const handleInvoice = async (orderId: number, orderCode: string) => {
-    try {
-      const blob = await orderService.getInvoice(orderId);
-      downloadFile(blob, `invoice-${orderCode}.pdf`);
-      toast.success("Invoice downloaded!");
-    } catch {
-      toast.error("Failed to download invoice");
-    }
-  };
-
   if (isLoading)
     return <div className="text-center py-20 text-gray-400">Loading...</div>;
 
