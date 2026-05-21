@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -13,9 +29,16 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
+  @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'categoryId', required: false, type: Number })
-  findAll(@Query('categoryId') categoryId?: number) {
-    return this.productsService.findAll(categoryId ? +categoryId : undefined);
+  findAll(
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: number,
+  ) {
+    return this.productsService.findAll(
+      search,
+      categoryId ? +categoryId : undefined,
+    );
   }
 
   @Get(':id')

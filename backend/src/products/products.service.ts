@@ -7,9 +7,17 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(categoryId?: number) {
+  async findAll(search?: string, categoryId?: number) {
     return this.prisma.product.findMany({
-      where: { ...(categoryId && { categoryId }) },
+      where: {
+        ...(categoryId && { categoryId }),
+        ...(search && {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { sku: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
       include: {
         category: { select: { id: true, name: true } },
       },
@@ -28,7 +36,9 @@ export class ProductsService {
 
   async create(dto: CreateProductDto) {
     // Kiểm tra SKU unique
-    const existing = await this.prisma.product.findUnique({ where: { sku: dto.sku } });
+    const existing = await this.prisma.product.findUnique({
+      where: { sku: dto.sku },
+    });
     if (existing) throw new ConflictException('SKU already exists');
 
     return this.prisma.product.create({

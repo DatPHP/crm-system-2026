@@ -17,9 +17,9 @@ export class OrdersController {
   constructor(private ordersService: OrdersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all orders' })
-  findAll() {
-    return this.ordersService.findAll();
+  @ApiQuery({ name: 'search', required: false })
+  findAll(@Query('search') search?: string) {
+    return this.ordersService.findAll(search);
   }
 
   @Get(':id')
@@ -30,10 +30,7 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({ summary: 'Create new order' })
-  create(
-    @Body() dto: CreateOrderDto,
-    @CurrentUser() user: any,
-  ) {
+  create(@Body() dto: CreateOrderDto, @CurrentUser() user: any) {
     return this.ordersService.create(dto, user.id);
   }
 
@@ -49,10 +46,7 @@ export class OrdersController {
 
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel order + restore stock' })
-  cancel(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
+  cancel(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.ordersService.cancel(id, user.id);
   }
 }

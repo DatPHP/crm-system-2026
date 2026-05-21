@@ -23,8 +23,20 @@ export class OrdersService {
   }
 
   // ─── GET ALL ───────────────────────────────────────────
-  async findAll() {
+  async findAll(search?: string) {
     return this.prisma.order.findMany({
+      where: search
+        ? {
+            OR: [
+              { orderCode: { contains: search, mode: 'insensitive' } },
+              {
+                customer: {
+                  fullName: { contains: search, mode: 'insensitive' },
+                },
+              },
+            ],
+          }
+        : undefined,
       include: {
         customer: { select: { id: true, fullName: true, phone: true } },
         createdBy: { select: { id: true, name: true } },

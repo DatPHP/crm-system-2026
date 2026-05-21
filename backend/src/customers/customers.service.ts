@@ -7,8 +7,17 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
+  findAll(search?: string) {
     return this.prisma.customer.findMany({
+      where: search
+        ? {
+            OR: [
+              { fullName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
       include: { _count: { select: { orders: true } } },
       orderBy: { id: 'desc' },
     });

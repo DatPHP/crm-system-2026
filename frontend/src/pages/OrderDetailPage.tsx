@@ -1,16 +1,18 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { orderService } from '../services/order.service';
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { orderService } from "../services/order.service";
+import { FileText } from "lucide-react";
+import { downloadFile } from "../utils/download";
 
 const statusColors: Record<string, string> = {
-  PENDING:   'bg-yellow-100 text-yellow-700',
-  PAID:      'bg-blue-100 text-blue-700',
-  COMPLETED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  PENDING: "bg-yellow-100 text-yellow-700",
+  PAID: "bg-blue-100 text-blue-700",
+  COMPLETED: "bg-green-100 text-green-700",
+  CANCELLED: "bg-red-100 text-red-700",
 };
 
-const statusFlow = ['PENDING', 'PAID', 'COMPLETED'];
+const statusFlow = ["PENDING", "PAID", "COMPLETED"];
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -18,33 +20,48 @@ export default function OrderDetailPage() {
   const queryClient = useQueryClient();
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ['order', id],
+    queryKey: ["order", id],
     queryFn: () => orderService.getOne(parseInt(id!)),
   });
 
   const updateMutation = useMutation({
-    mutationFn: (status: string) => orderService.update(parseInt(id!), { status }),
+    mutationFn: (status: string) =>
+      orderService.update(parseInt(id!), { status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order', id] });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      toast.success('Status updated!');
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Status updated!");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Error'),
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error"),
   });
 
   const cancelMutation = useMutation({
     mutationFn: () => orderService.cancel(parseInt(id!)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order', id] });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast.success('Order cancelled!');
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Order cancelled!");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Error'),
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error"),
   });
 
-  if (isLoading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
-  if (!order) return <div className="text-center py-20 text-red-400">Order not found</div>;
+  const handleInvoice = async () => {
+    try {
+      const blob = await orderService.getInvoice(parseInt(id!));
+      downloadFile(blob, `invoice-${order.orderCode}.pdf`);
+      toast.success("Invoice downloaded!");
+    } catch {
+      toast.error("Failed to download invoice");
+    }
+  };
+
+  if (isLoading)
+    return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (!order)
+    return (
+      <div className="text-center py-20 text-red-400">Order not found</div>
+    );
 
   const currentStatusIndex = statusFlow.indexOf(order.status);
 
@@ -53,32 +70,49 @@ export default function OrderDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/orders')} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={() => navigate("/orders")}
+            className="text-gray-500 hover:text-gray-700"
+          >
             ← Back
           </button>
           <div>
             <h1 className="text-2xl font-bold font-mono">{order.orderCode}</h1>
             <p className="text-sm text-gray-500">
-              Created {new Date(order.createdAt).toLocaleString()} by {order.createdBy?.name}
+              Created {new Date(order.createdAt).toLocaleString()} by{" "}
+              {order.createdBy?.name}
             </p>
           </div>
         </div>
-        <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${statusColors[order.status]}`}>
+        <span
+          className={`px-3 py-1.5 rounded-full text-sm font-semibold ${statusColors[order.status]}`}
+        >
           {order.status}
         </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-
           {/* Customer Info */}
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold mb-3">Customer</h2>
             <div className="text-sm space-y-1">
-              <p><span className="text-gray-500">Name:</span> <strong>{order.customer?.fullName}</strong></p>
-              <p><span className="text-gray-500">Email:</span> {order.customer?.email || '—'}</p>
-              <p><span className="text-gray-500">Phone:</span> {order.customer?.phone || '—'}</p>
-              <p><span className="text-gray-500">Address:</span> {order.customer?.address || '—'}</p>
+              <p>
+                <span className="text-gray-500">Name:</span>{" "}
+                <strong>{order.customer?.fullName}</strong>
+              </p>
+              <p>
+                <span className="text-gray-500">Email:</span>{" "}
+                {order.customer?.email || "—"}
+              </p>
+              <p>
+                <span className="text-gray-500">Phone:</span>{" "}
+                {order.customer?.phone || "—"}
+              </p>
+              <p>
+                <span className="text-gray-500">Address:</span>{" "}
+                {order.customer?.address || "—"}
+              </p>
             </div>
           </div>
 
@@ -99,8 +133,12 @@ export default function OrderDetailPage() {
                 {order.orderItems.map((item: any) => (
                   <tr key={item.id} className="border-b last:border-0">
                     <td className="py-2 font-medium">{item.product?.title}</td>
-                    <td className="py-2 text-gray-500 font-mono text-xs">{item.product?.sku}</td>
-                    <td className="py-2">${Number(item.unitPrice).toLocaleString()}</td>
+                    <td className="py-2 text-gray-500 font-mono text-xs">
+                      {item.product?.sku}
+                    </td>
+                    <td className="py-2">
+                      ${Number(item.unitPrice).toLocaleString()}
+                    </td>
                     <td className="py-2">{item.quantity}</td>
                     <td className="py-2 text-right font-semibold">
                       ${Number(item.subtotal).toLocaleString()}
@@ -108,7 +146,9 @@ export default function OrderDetailPage() {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="pt-3 text-right font-bold">Total:</td>
+                  <td colSpan={4} className="pt-3 text-right font-bold">
+                    Total:
+                  </td>
                   <td className="pt-3 text-right font-bold text-lg">
                     ${Number(order.totalPrice).toLocaleString()}
                   </td>
@@ -128,7 +168,8 @@ export default function OrderDetailPage() {
                     <p className="font-medium">{h.action}</p>
                     <p className="text-gray-500">{h.description}</p>
                     <p className="text-xs text-gray-400">
-                      {new Date(h.createdAt).toLocaleString()} — {h.createdBy?.name}
+                      {new Date(h.createdAt).toLocaleString()} —{" "}
+                      {h.createdBy?.name}
                     </p>
                   </div>
                 </div>
@@ -146,15 +187,16 @@ export default function OrderDetailPage() {
                 <button
                   key={status}
                   disabled={
-                    order.status === 'CANCELLED' ||
+                    order.status === "CANCELLED" ||
                     order.status === status ||
                     index <= currentStatusIndex
                   }
                   onClick={() => updateMutation.mutate(status)}
                   className={`w-full py-2 rounded-lg text-sm font-medium border transition-colors
-                    ${order.status === status
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed'
+                    ${
+                      order.status === status
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                     }`}
                 >
                   {status}
@@ -162,9 +204,18 @@ export default function OrderDetailPage() {
               ))}
             </div>
 
-            {order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && (
+            <button
+              onClick={handleInvoice}
+              className="w-full mt-2 py-2 rounded-lg text-sm font-medium border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center gap-2"
+            >
+              <FileText size={16} /> Print Invoice
+            </button>
+
+            {order.status !== "CANCELLED" && order.status !== "COMPLETED" && (
               <button
-                onClick={() => { if (confirm('Cancel this order?')) cancelMutation.mutate(); }}
+                onClick={() => {
+                  if (confirm("Cancel this order?")) cancelMutation.mutate();
+                }}
                 className="w-full mt-3 py-2 rounded-lg text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50"
               >
                 Cancel Order
