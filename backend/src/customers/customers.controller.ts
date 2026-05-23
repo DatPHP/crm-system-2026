@@ -35,7 +35,7 @@ export class CustomersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.ordersService.findAll(search, {
+    return this.customersService.findAll(search, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
     });
