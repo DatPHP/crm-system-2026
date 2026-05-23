@@ -19,11 +19,12 @@ A full-stack CRM system for managing orders, products, customers, and categories
 ## ✨ Features
 
 - 🔐 **Authentication** — Register, Login, JWT-based protected routes
-- 📦 **Product Management** — CRUD with SKU, stock tracking, categories
+- 📦 **Product Management** — CRUD with SKU, stock tracking, categories, image uploads (Cloudinary)
 - 👥 **Customer Management** — Full customer profiles
 - 🛒 **Order Management** — Create orders with multiple products, auto stock deduction
 - 📊 **Dashboard** — Real-time stats: revenue, orders, products, customers
 - 🔄 **Order History** — Automatic audit trail for every status change
+- 📤 **Data Export** — Export data to Excel and PDF formats
 - 📱 **Responsive** — Works on desktop and mobile
 
 ---
@@ -34,26 +35,29 @@ A full-stack CRM system for managing orders, products, customers, and categories
 
 | Tech                    | Usage                  |
 | ----------------------- | ---------------------- |
-| React 18 + TypeScript   | UI framework           |
-| Vite                    | Build tool             |
+| React 19 + TypeScript   | UI framework           |
+| Vite 8                  | Build tool             |
 | TailwindCSS + shadcn/ui | Styling                |
-| React Query             | Server state & caching |
+| React Query v5          | Server state & caching |
 | React Hook Form + Zod   | Form validation        |
 | Zustand                 | Auth state management  |
 | Axios                   | HTTP client            |
-| React Router v6         | Client-side routing    |
+| React Router v7         | Client-side routing    |
 
 ### Backend
 
 | Tech                | Usage             |
 | ------------------- | ----------------- |
-| NestJS + TypeScript | API framework     |
-| Prisma ORM          | Database access   |
+| NestJS 11 + TypeScript| API framework     |
+| Prisma ORM 6        | Database access   |
 | PostgreSQL          | Database          |
 | JWT + Passport      | Authentication    |
 | bcrypt              | Password hashing  |
 | Swagger             | API documentation |
 | class-validator     | DTO validation    |
+| Cloudinary + Multer | Image uploads     |
+| ExcelJS + PDFKit    | Data export       |
+| Helmet + Throttler  | Security          |
 
 ### Infrastructure
 
@@ -76,27 +80,36 @@ A full-stack CRM system for managing orders, products, customers, and categories
 crm-system/
 ├── frontend/                 # React application
 │   ├── src/
+│   │   ├── assets/           # Static assets
+│   │   ├── components/       # Reusable UI components
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── layouts/          # CRM layouts
+│   │   ├── lib/              # Utility libraries & Axios instance
 │   │   ├── pages/            # Page components
-│   │   ├── components/       # Reusable components
-│   │   ├── layouts/          # CRM layout
+│   │   ├── routes/           # Protected routing logic
 │   │   ├── services/         # API service calls
-│   │   ├── store/            # Zustand auth store
-│   │   ├── routes/           # Protected routes
-│   │   └── lib/              # Axios instance
+│   │   ├── store/            # Zustand state management
+│   │   ├── types/            # TypeScript type definitions
+│   │   └── utils/            # Helper functions
 │   └── vercel.json
 │
 └── backend/                  # NestJS application
     ├── src/
     │   ├── auth/             # JWT authentication
-    │   ├── users/            # User management
     │   ├── categories/       # Category CRUD
-    │   ├── products/         # Product CRUD
+    │   ├── common/           # Shared modules/utils
+    │   ├── config/           # App configuration
     │   ├── customers/        # Customer CRUD
-    │   ├── orders/           # Order management
     │   ├── dashboard/        # Stats & analytics
+    │   ├── decorators/       # Custom decorators
+    │   ├── export/           # Excel/PDF export services
+    │   ├── filters/          # Exception filters
+    │   ├── guards/           # JWT guard & strategies
+    │   ├── orders/           # Order management
     │   ├── prisma/           # Database service
-    │   ├── guards/           # JWT guard & strategy
-    │   └── filters/          # Exception filters
+    │   ├── products/         # Product CRUD
+    │   ├── upload/           # Cloudinary file upload
+    │   └── users/            # User management
     └── prisma/
         └── schema.prisma     # Database schema
 ```
