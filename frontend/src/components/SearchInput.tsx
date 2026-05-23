@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { Search, X } from "lucide-react";
 
 interface Props {
   value: string;
@@ -6,10 +6,17 @@ interface Props {
   placeholder?: string;
 }
 
-export default function SearchInput({ value, onChange, placeholder = 'Search...' }: Props) {
+export default function SearchInput({
+  value,
+  onChange,
+  placeholder = "Search...",
+}: Props) {
   return (
     <div className="relative">
-      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <Search
+        size={16}
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+      />
       <input
         type="text"
         value={value}
@@ -19,7 +26,7 @@ export default function SearchInput({ value, onChange, placeholder = 'Search...'
       />
       {value && (
         <button
-          onClick={() => onChange('')}
+          onClick={() => onChange("")}
           className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
         >
           <X size={14} />

@@ -1,10 +1,8 @@
 import api from "../lib/axios";
 
 export const orderService = {
-  getAll: (search?: string) =>
-    api
-      .get("/orders", { params: search ? { search } : {} })
-      .then((r) => r.data),
+  getAll: (search?: string, page: number = 1, limit: number = 10) =>
+    api.get("/orders", { params: { search, page, limit } }).then((r) => r.data),
   getOne: (id: number) => api.get(`/orders/${id}`).then((r) => r.data),
   create: (data: any) => api.post("/orders", data).then((r) => r.data),
   update: (id: number, data: any) =>

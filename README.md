@@ -31,39 +31,43 @@ A full-stack CRM system for managing orders, products, customers, and categories
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Tech | Usage |
-|---|---|
-| React 18 + TypeScript | UI framework |
-| Vite | Build tool |
-| TailwindCSS + shadcn/ui | Styling |
-| React Query | Server state & caching |
-| React Hook Form + Zod | Form validation |
-| Zustand | Auth state management |
-| Axios | HTTP client |
-| React Router v6 | Client-side routing |
+
+| Tech                    | Usage                  |
+| ----------------------- | ---------------------- |
+| React 18 + TypeScript   | UI framework           |
+| Vite                    | Build tool             |
+| TailwindCSS + shadcn/ui | Styling                |
+| React Query             | Server state & caching |
+| React Hook Form + Zod   | Form validation        |
+| Zustand                 | Auth state management  |
+| Axios                   | HTTP client            |
+| React Router v6         | Client-side routing    |
 
 ### Backend
-| Tech | Usage |
-|---|---|
-| NestJS + TypeScript | API framework |
-| Prisma ORM | Database access |
-| PostgreSQL | Database |
-| JWT + Passport | Authentication |
-| bcrypt | Password hashing |
-| Swagger | API documentation |
-| class-validator | DTO validation |
+
+| Tech                | Usage             |
+| ------------------- | ----------------- |
+| NestJS + TypeScript | API framework     |
+| Prisma ORM          | Database access   |
+| PostgreSQL          | Database          |
+| JWT + Passport      | Authentication    |
+| bcrypt              | Password hashing  |
+| Swagger             | API documentation |
+| class-validator     | DTO validation    |
 
 ### Infrastructure
-| Service | Usage |
-|---|---|
-| Vercel | Frontend hosting |
-| Render | Backend hosting |
-| Neon | Serverless PostgreSQL |
-| GitHub | Source control |
+
+| Service | Usage                 |
+| ------- | --------------------- |
+| Vercel  | Frontend hosting      |
+| Render  | Backend hosting       |
+| Neon    | Serverless PostgreSQL |
+| GitHub  | Source control        |
 
 ---
 
 ## 🏗️ Architecture
+
 ---
 
 ## 📁 Project Structure
@@ -96,22 +100,25 @@ crm-system/
     └── prisma/
         └── schema.prisma     # Database schema
 ```
+
 ---
 
 ## 🗄️ Database Schema
 
-- **users**          → admins who manage the CRM
-- **customers**      → customers who place orders
-- **categories**     → product categories (with parent/child)
-- **products**       → products with stock tracking
-- **orders**         → orders linked to customers
-- **order_items**    → products within each order
+- **users** → admins who manage the CRM
+- **customers** → customers who place orders
+- **categories** → product categories (with parent/child)
+- **products** → products with stock tracking
+- **orders** → orders linked to customers
+- **order_items** → products within each order
 - **order_histories** → audit log for order changes
+
 ---
 
 ## 🚀 Local Development
 
 ### Prerequisites
+
 - Node.js >= 18
 - PostgreSQL database (or Neon free tier)
 
@@ -177,6 +184,7 @@ GET    /api/dashboard/summary
 ## 💡 Key Implementation Highlights
 
 **Prisma Transaction for Orders**
+
 ```typescript
 // Ensures stock deduction and order creation are atomic
 await prisma.$transaction(async (tx) => {
@@ -188,6 +196,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **JWT Protected Routes**
+
 ```typescript
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -195,9 +204,10 @@ export class OrdersController { ... }
 ```
 
 **React Query for Data Fetching**
+
 ```typescript
 const { data, isLoading } = useQuery({
-  queryKey: ['orders'],
+  queryKey: ["orders"],
   queryFn: orderService.getAll,
 });
 ```
@@ -207,6 +217,7 @@ const { data, isLoading } = useQuery({
 ## 👨‍💻 Author
 
 **Dat**
+
 - GitHub: [@DatPHP](https://github.com/DatPHP)
 - Live Demo: [crm-system-2026.vercel.app](https://crm-system-2026.vercel.app)
 

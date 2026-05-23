@@ -1,9 +1,9 @@
 import api from "../lib/axios";
 
 export const customerService = {
-  getAll: (search?: string) =>
+  getAll: (search?: string, page: number = 1, limit: number = 10) =>
     api
-      .get("/customers", { params: search ? { search } : {} })
+      .get("/customers", { params: { search, page, limit } })
       .then((r) => r.data),
   getOne: (id: number) => api.get(`/customers/${id}`).then((r) => r.data),
   create: (data: any) => api.post("/customers", data).then((r) => r.data),

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
 
 export default function CRMLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -9,7 +9,6 @@ export default function CRMLayout() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-
       {/* Mobile overlay */}
       {mobileSidebarOpen && (
         <div
@@ -24,10 +23,12 @@ export default function CRMLayout() {
       </div>
 
       {/* Sidebar — mobile (slide in) */}
-      <div className={`
+      <div
+        className={`
         fixed inset-y-0 left-0 z-30 lg:hidden transition-transform duration-300
-        ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+        ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}
+      >
         <Sidebar isOpen={true} />
       </div>
 

@@ -1,18 +1,22 @@
-import { Menu, LogOut, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/auth.store';
-import { toast } from 'sonner';
-import { useState } from 'react';
+import { Menu, LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/auth.store";
+import { toast } from "sonner";
+import { useState } from "react";
 
-export default function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export default function Header({
+  onToggleSidebar,
+}: {
+  onToggleSidebar: () => void;
+}) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    toast.success('Đã đăng xuất');
-    navigate('/login');
+    toast.success("Đã đăng xuất");
+    navigate("/login");
   };
 
   return (
@@ -32,9 +36,9 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
           className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100"
         >
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-            {user?.name?.charAt(0).toUpperCase() || 'A'}
+            {user?.name?.charAt(0).toUpperCase() || "A"}
           </div>
-          <span className="text-sm font-medium">{user?.name || 'Admin'}</span>
+          <span className="text-sm font-medium">{user?.name || "Admin"}</span>
         </button>
 
         {/* Dropdown */}

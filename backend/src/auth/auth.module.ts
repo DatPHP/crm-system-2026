@@ -18,9 +18,7 @@ import { JwtStrategy } from '../guards/jwt.strategy';
         secret: config.get<string>('JWT_SECRET')!,
 
         signOptions: {
-          expiresIn: config.get<string>(
-            'JWT_EXPIRES_IN',
-          ) as '7d',
+          expiresIn: config.get<string>('JWT_EXPIRES_IN') as '7d',
         },
       }),
     }),

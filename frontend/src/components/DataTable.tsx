@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from "lucide-react";
 
 interface Column<T> {
   key: keyof T | string;
@@ -15,7 +15,11 @@ interface Props<T> {
 }
 
 export default function DataTable<T extends { id: number }>({
-  data, columns, onEdit, onDelete, isLoading
+  data,
+  columns,
+  onEdit,
+  onDelete,
+  isLoading,
 }: Props<T>) {
   if (isLoading) {
     return <div className="text-center py-10 text-gray-400">Loading...</div>;
@@ -26,31 +30,42 @@ export default function DataTable<T extends { id: number }>({
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b">
           <tr>
-            {columns.map(col => (
-              <th key={String(col.key)} className="px-4 py-3 text-left font-semibold text-gray-600">
+            {columns.map((col) => (
+              <th
+                key={String(col.key)}
+                className="px-4 py-3 text-left font-semibold text-gray-600"
+              >
                 {col.label}
               </th>
             ))}
             {(onEdit || onDelete) && (
-              <th className="px-4 py-3 text-left font-semibold text-gray-600">Actions</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                Actions
+              </th>
             )}
           </tr>
         </thead>
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + 1} className="text-center py-10 text-gray-400">
+              <td
+                colSpan={columns.length + 1}
+                className="text-center py-10 text-gray-400"
+              >
                 No data found
               </td>
             </tr>
           ) : (
-            data.map(row => (
-              <tr key={row.id} className="border-b hover:bg-gray-50 transition-colors">
-                {columns.map(col => (
+            data.map((row) => (
+              <tr
+                key={row.id}
+                className="border-b hover:bg-gray-50 transition-colors"
+              >
+                {columns.map((col) => (
                   <td key={String(col.key)} className="px-4 py-3">
                     {col.render
                       ? col.render(row)
-                      : String((row as any)[col.key] ?? '-')}
+                      : String((row as any)[col.key] ?? "-")}
                   </td>
                 ))}
                 {(onEdit || onDelete) && (

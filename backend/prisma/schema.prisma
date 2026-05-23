@@ -7,21 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
 // ==================== USERS ====================
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
-  role      String   @default("admin")
+  role      Role     @default(ADMIN)  // đổi từ String sang Role
   avatar    String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   orders         Order[]        @relation("CreatedByUser")
   orderHistories OrderHistory[] @relation("HistoryByUser")
+  refreshTokens  RefreshToken[]
 
   @@map("users")
 }
@@ -68,7 +74,12 @@ model Product {
   title         String
   sku           String   @unique
   description   String?
-  image         String?
+
+  // Image fields
+  image         String?  // URL chính
+  imagePublicId String?  // Cloudinary public_id để xóa ảnh
+  thumbnail     String?  // URL thumbnail (Cloudinary auto-generate)
+
   price         Decimal  @db.Decimal(10, 2)
   stockQuantity Int      @default(0)
   isActive      Boolean  @default(true)
@@ -82,7 +93,6 @@ model Product {
 
   @@map("products")
 }
-
 // ==================== ORDERS ====================
 model Order {
   id         Int      @id @default(autoincrement())
@@ -144,4 +154,15 @@ model OrderHistory {
   createdBy   User @relation("HistoryByUser", fields: [createdById], references: [id])
 
   @@map("order_histories")
+}
+// ==================== REFRESH TOKENS ====================
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
 }

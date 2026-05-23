@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { orderService } from "../services/order.service";
 import SearchInput from "../components/SearchInput";
 import ExportButton from "../components/ExportButton";
 import { useDebounce } from "../hooks/useDebounce";
+import Pagination from "../components/Pagination";
 
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -19,12 +20,21 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 400);
 
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders", debouncedSearch],
-    queryFn: () => orderService.getAll(debouncedSearch || undefined),
+  // Thêm sau khai báo debouncedSearch
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["orders", debouncedSearch, page],
+    queryFn: () => orderService.getAll(debouncedSearch || undefined, page),
   });
+
+  const orders = result?.data || [];
+  const pagination = result?.meta;
 
   const cancelMutation = useMutation({
     mutationFn: orderService.cancel,
@@ -166,6 +176,15 @@ export default function OrdersPage() {
           </table>
         </div>
       </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

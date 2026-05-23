@@ -1,11 +1,14 @@
-import { PackageOpen } from 'lucide-react';
+import { PackageOpen } from "lucide-react";
 
 interface Props {
   message?: string;
   action?: { label: string; onClick: () => void };
 }
 
-export default function EmptyState({ message = 'No data found', action }: Props) {
+export default function EmptyState({
+  message = "No data found",
+  action,
+}: Props) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
       <PackageOpen size={48} className="mb-3 opacity-40" />

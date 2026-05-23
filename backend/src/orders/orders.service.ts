@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { paginate } from '../common/interfaces/paginated.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class OrdersService {
@@ -23,31 +25,44 @@ export class OrdersService {
   }
 
   // ─── GET ALL ───────────────────────────────────────────
-  async findAll(search?: string) {
-    return this.prisma.order.findMany({
-      where: search
-        ? {
-            OR: [
-              { orderCode: { contains: search, mode: 'insensitive' } },
-              {
-                customer: {
-                  fullName: { contains: search, mode: 'insensitive' },
-                },
+  async findAll(search?: string, pagination?: PaginationDto) {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            { orderCode: { contains: search, mode: 'insensitive' as const } },
+            {
+              customer: {
+                fullName: { contains: search, mode: 'insensitive' as const },
               },
-            ],
-          }
-        : undefined,
-      include: {
-        customer: { select: { id: true, fullName: true, phone: true } },
-        createdBy: { select: { id: true, name: true } },
-        orderItems: {
-          include: {
-            product: { select: { id: true, title: true, sku: true } },
+            },
+          ],
+        }
+      : {};
+
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        include: {
+          customer: { select: { id: true, fullName: true, phone: true } },
+          createdBy: { select: { id: true, name: true } },
+          orderItems: {
+            include: {
+              product: { select: { id: true, title: true, sku: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return paginate(data, total, page, limit);
   }
 
   // ─── GET ONE ───────────────────────────────────────────

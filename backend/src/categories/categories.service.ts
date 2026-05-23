@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -59,7 +63,8 @@ export class CategoriesService {
   async update(id: number, dto: UpdateCategoryDto) {
     await this.findOne(id); // kiểm tra tồn tại
 
-    const slug = dto.slug || (dto.name ? this.generateSlug(dto.name) : undefined);
+    const slug =
+      dto.slug || (dto.name ? this.generateSlug(dto.name) : undefined);
 
     return this.prisma.category.update({
       where: { id },
@@ -76,7 +81,9 @@ export class CategoriesService {
     await this.findOne(id);
 
     // Kiểm tra có products không
-    const hasProducts = await this.prisma.product.count({ where: { categoryId: id } });
+    const hasProducts = await this.prisma.product.count({
+      where: { categoryId: id },
+    });
     if (hasProducts > 0) {
       throw new ConflictException('Cannot delete category that has products');
     }

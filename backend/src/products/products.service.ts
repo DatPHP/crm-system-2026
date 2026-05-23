@@ -1,28 +1,49 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { paginate } from '../common/interfaces/paginated.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(search?: string, categoryId?: number) {
-    return this.prisma.product.findMany({
-      where: {
-        ...(categoryId && { categoryId }),
-        ...(search && {
-          OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { sku: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
-      },
-      include: {
-        category: { select: { id: true, name: true } },
-      },
-      orderBy: { id: 'desc' },
-    });
+  async findAll(
+    search?: string,
+    categoryId?: number,
+    pagination?: PaginationDto,
+  ) {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ...(categoryId && { categoryId }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { sku: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: { category: { select: { id: true, name: true } } },
+        orderBy: { id: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

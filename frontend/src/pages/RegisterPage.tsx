@@ -1,20 +1,22 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useAuthStore } from '../store/auth.store';
-import api from '../lib/axios';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useAuthStore } from "../store/auth.store";
+import api from "../lib/axios";
 
-const schema = z.object({
-  name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: 'Mật khẩu không khớp',
-  path: ['confirmPassword'],
-});
+const schema = z
+  .object({
+    name: z.string().min(2, "Tên tối thiểu 2 ký tự"),
+    email: z.string().email("Email không hợp lệ"),
+    password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu không khớp",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -22,22 +24,26 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await api.post('/auth/register', {
+      const res = await api.post("/auth/register", {
         name: data.name,
         email: data.email,
         password: data.password,
       });
-      setAuth(res.data.user, res.data.token);
-      toast.success('Đăng ký thành công!');
-      navigate('/dashboard');
+      setAuth(res.data.user, res.data.accessToken, res.data.refreshToken);
+      toast.success("Đăng ký thành công!");
+      navigate("/dashboard");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Đăng ký thất bại');
+      toast.error(err.response?.data?.message || "Đăng ký thất bại");
     }
   };
 
@@ -50,44 +56,60 @@ export default function RegisterPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Full Name</label>
             <input
-              {...register('name')}
+              {...register("name")}
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Nguyen Van A"
             />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
-              {...register('email')}
+              {...register("email")}
               type="email"
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="admin@gmail.com"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
             <input
-              {...register('password')}
+              {...register("password")}
               type="password"
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Confirm Password</label>
+            <label className="block text-sm font-medium mb-1">
+              Confirm Password
+            </label>
             <input
-              {...register('confirmPassword')}
+              {...register("confirmPassword")}
               type="password"
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           <button
@@ -95,13 +117,16 @@ export default function RegisterPage() {
             disabled={isSubmitting}
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {isSubmitting ? 'Đang đăng ký...' : 'Register'}
+            {isSubmitting ? "Đang đăng ký..." : "Register"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-4">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline font-medium">
+          Already have an account?{" "}
+          <a
+            href="/login"
+            className="text-blue-600 hover:underline font-medium"
+          >
             Login
           </a>
         </p>

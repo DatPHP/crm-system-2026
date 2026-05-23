@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -8,19 +8,29 @@ import DataTable from "../components/DataTable";
 import SearchInput from "../components/SearchInput";
 import ExportButton from "../components/ExportButton";
 import { useDebounce } from "../hooks/useDebounce";
+import Pagination from "../components/Pagination";
 
 export default function CustomersPage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 400);
   const { register, handleSubmit, reset, setValue } = useForm();
 
-  const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["customers", debouncedSearch],
-    queryFn: () => customerService.getAll(debouncedSearch || undefined),
+  // Thêm sau khai báo debouncedSearch
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["customers", debouncedSearch, page],
+    queryFn: () => customerService.getAll(debouncedSearch || undefined, page),
   });
+
+  const customers = result?.data || [];
+  const pagination = result?.meta;
 
   const createMutation = useMutation({
     mutationFn: customerService.create,
@@ -173,6 +183,16 @@ export default function CustomersPage() {
         }}
         isLoading={isLoading}
       />
+
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }
