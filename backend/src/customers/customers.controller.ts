@@ -32,9 +32,13 @@ export class CustomersController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
     @Query('search') search?: string,
-    @Query() pagination?: PaginationDto,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.customersService.findAll(search, pagination);
+    return this.ordersService.findAll(search, {
+      page: page ? +page : 1,
+      limit: limit ? +limit : 10,
+    });
   }
 
   @Get(':id')

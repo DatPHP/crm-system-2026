@@ -33,13 +33,17 @@ export class ProductsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
     @Query('search') search?: string,
-    @Query('categoryId') categoryId?: number,
-    @Query() pagination?: PaginationDto,
+    @Query('categoryId') categoryId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.productsService.findAll(
       search,
       categoryId ? +categoryId : undefined,
-      pagination,
+      {
+        page: page ? +page : 1,
+        limit: limit ? +limit : 10,
+      },
     );
   }
 
