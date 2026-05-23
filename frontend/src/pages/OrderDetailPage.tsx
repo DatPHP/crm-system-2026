@@ -161,19 +161,32 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold mb-3">History</h2>
             <div className="space-y-3">
-              {order.orderHistories.map((h: any) => (
-                <div key={h.id} className="flex gap-3 text-sm">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 shrink-0" />
-                  <div>
-                    <p className="font-medium">{h.action}</p>
-                    <p className="text-gray-500">{h.description}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(h.createdAt).toLocaleString()} —{" "}
-                      {h.createdBy?.name}
-                    </p>
+              {order.orderHistories.length === 0 ? (
+                <p className="text-gray-400 text-sm">No history yet</p>
+              ) : (
+                order.orderHistories.map((h: any) => (
+                  <div
+                    key={h.id}
+                    className="flex gap-3 text-sm border-b last:border-0 pb-3 last:pb-0"
+                  >
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800">{h.action}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(h.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {h.description && (
+                        <p className="text-gray-500 mt-0.5">{h.description}</p>
+                      )}
+                      <p className="text-xs text-blue-500 mt-0.5">
+                        by {h.createdBy?.name}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

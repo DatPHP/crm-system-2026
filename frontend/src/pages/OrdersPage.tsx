@@ -128,7 +128,7 @@ export default function OrdersPage() {
                       {order.customer?.fullName}
                     </td>
                     <td className="px-4 py-3">
-                      {order.orderItems?.length} items
+                      {order.orderItems?.length ?? 0} items
                     </td>
                     <td className="px-4 py-3 font-semibold whitespace-nowrap">
                       $

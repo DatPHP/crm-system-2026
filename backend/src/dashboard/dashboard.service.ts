@@ -27,6 +27,7 @@ export class DashboardService {
         orderBy: { createdAt: 'desc' },
         include: {
           customer: { select: { fullName: true } },
+          orderItems: true,
         },
       }),
       this.prisma.order.groupBy({
