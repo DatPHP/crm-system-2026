@@ -24,16 +24,18 @@ export default function CreateOrderPage() {
   const [selectedProductId, setSelectedProductId] = useState("");
 
   // Customers query
-  const { data: customers = [] } = useQuery({
+  const { data: customersResult } = useQuery({
     queryKey: ["customers"],
-    queryFn: () => customerService.getAll(), // bỏ tham số
+    queryFn: () => customerService.getAll(),
   });
+  const customers = customersResult?.data || [];
 
   // Products query
-  const { data: products = [] } = useQuery({
+  const { data: productsResult } = useQuery({
     queryKey: ["products"],
-    queryFn: () => productService.getAll(), // bỏ tham số
+    queryFn: () => productService.getAll(),
   });
+  const products = productsResult?.data || [];
 
   const createMutation = useMutation({
     mutationFn: orderService.create,
