@@ -163,7 +163,7 @@ export default function CreateOrderPage() {
           {/* Step 2: Add Products */}
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold mb-3">② Add Products</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
@@ -179,7 +179,7 @@ export default function CreateOrderPage() {
               </select>
               <button
                 onClick={addToCart}
-                className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto"
               >
                 <Plus size={16} /> Add
               </button>
