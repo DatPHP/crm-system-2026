@@ -6,7 +6,7 @@ const api = axios.create({
 
 // Gắn accessToken vào header
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+   const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -58,6 +58,7 @@ api.interceptors.response.use(
 
         const newAccessToken = res.data.accessToken;
         localStorage.setItem("accessToken", newAccessToken);
+        localStorage.removeItem('token');
 
         // Cập nhật refreshToken mới (rotation)
         if (res.data.refreshToken) {
