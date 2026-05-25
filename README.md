@@ -23,7 +23,7 @@ A full-stack CRM system for managing orders, products, customers, and categories
 *(Add your actual screenshots below)*
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Dashboard+Overview" alt="Dashboard" width="800" />
+  <img src="https://drive.google.com/file/d/1mR2IG6JJ0sOaG0OPiuFxPHAqYrwa279U/view?text=Dashboard+Overview" alt="Dashboard" width="800" />
   <br/>
   <i>Dashboard Overview & Analytics</i>
 </div>
@@ -31,7 +31,7 @@ A full-stack CRM system for managing orders, products, customers, and categories
 <br/>
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Order+Management" alt="Orders" width="800" />
+  <img src="https://drive.google.com/file/d/10uLKm9kOIhz4SjD_CXA2Z_7IpQ_IFVto/view" alt="Orders" width="800" />
   <br/>
   <i>Order Management & Tracking</i>
 </div>
