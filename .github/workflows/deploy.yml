@@ -1,58 +1,94 @@
-deploy-frontend:
-  name: 🌐 Deploy Frontend → Vercel
-  runs-on: ubuntu-latest
-  needs: deploy-backend
+name: CD — Deploy to Production
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: "20"
+jobs:
+  deploy-backend:
+    name: 🚀 Deploy Backend → Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}")
+          echo "Render response: $STATUS"
 
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
+      - name: Wait for Render
+        run: sleep 90
 
-    - name: Pull Vercel environment
-      run: |
-        vercel pull \
-          --yes \
-          --environment=production \
-          --token=${{ secrets.VERCEL_TOKEN }}
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Health check backend
+        run: |
+          MAX_RETRIES=5
+          RETRY=0
+          until [ $RETRY -ge $MAX_RETRIES ]; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 30 \
+              https://crm-system-2026-5nqq.onrender.com/api/docs)
+            echo "Attempt $((RETRY+1)): HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Backend healthy!"
+              break
+            fi
+            RETRY=$((RETRY+1))
+            sleep 20
+          done
 
-    - name: Build for Vercel
-      run: |
-        vercel build \
-          --prod \
-          --token=${{ secrets.VERCEL_TOKEN }}
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  deploy-frontend:
+    name: 🌐 Deploy Frontend → Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Deploy to Vercel
-      run: |
-        DEPLOY_URL=$(vercel deploy \
-          --prebuilt \
-          --prod \
-          --token=${{ secrets.VERCEL_TOKEN }})
-        echo "Deployed to: $DEPLOY_URL"
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Health check frontend
-      run: |
-        sleep 15
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-          https://crm-system-2026.vercel.app)
-        echo "Frontend status: $STATUS"
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ Frontend is healthy!"
-        else
-          echo "⚠️ Frontend returned $STATUS"
-        fi
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build for Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed to: $DEPLOY_URL"
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Health check frontend
+        run: |
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://crm-system-2026.vercel.app)
+          echo "Frontend status: $STATUS"
+          if [ "$STATUS" = "200" ]; then echo "✅ Frontend healthy!"; fi
+
+  summary:
+    name: 📊 Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          echo "## 🚀 Deploy Result" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.deploy-backend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
