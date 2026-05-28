@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # ── Backend ──────────────────────────────────────
+  backend:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile
+      target:     builder
+    container_name: crm_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:          "${DATABASE_URL}"
+      JWT_SECRET:            "${JWT_SECRET}"
+      JWT_EXPIRES_IN:        "${JWT_EXPIRES_IN}"
+      PORT:                  3000
+      FRONTEND_URL:          "http://localhost:5173"
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
+      CLOUDINARY_API_KEY:    "${CLOUDINARY_API_KEY}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/src:/app/src
+    command: npm run start:dev
+
+  # ── Frontend ─────────────────────────────────────
+  frontend:
+    build:
+      context:    ./frontend
+      dockerfile: Dockerfile
+      target:     builder
+      args:
+        VITE_API_URL: "http://localhost:3000/api"
+    container_name: crm_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+    command: npm run dev -- --host 0.0.0.0

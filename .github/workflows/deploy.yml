@@ -1,0 +1,129 @@
+name: CD — Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # cho phép trigger thủ công
+
+jobs:
+  # ── Deploy Backend → Render ──────────────────────
+  deploy-backend:
+    name: 🚀 Deploy Backend → Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          echo "Triggering Render deploy..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}")
+          echo "Render response: $STATUS"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
+            echo "❌ Failed to trigger Render deploy (status: $STATUS)"
+            exit 1
+          fi
+          echo "✅ Render deploy triggered"
+
+      - name: Wait for Render to deploy
+        run: |
+          echo "Waiting 90s for Render..."
+          sleep 90
+
+      - name: Health check backend
+        run: |
+          MAX_RETRIES=5
+          RETRY=0
+          until [ $RETRY -ge $MAX_RETRIES ]; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 30 \
+              https://crm-system-2026-5nqq.onrender.com/api/docs)
+            echo "Attempt $((RETRY+1)): HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Backend is healthy!"
+              break
+            fi
+            RETRY=$((RETRY+1))
+            sleep 20
+          done
+          if [ $RETRY -ge $MAX_RETRIES ]; then
+            echo "❌ Backend health check failed after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+  # ── Deploy Frontend → Vercel ─────────────────────
+  deploy-frontend:
+    name: 🌐 Deploy Frontend → Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: |
+          vercel pull \
+            --yes \
+            --environment=production \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+
+      - name: Build for Vercel
+        run: |
+          vercel build \
+            --prod \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        run: |
+          DEPLOY_URL=$(vercel deploy \
+            --prebuilt \
+            --prod \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed to: $DEPLOY_URL"
+          echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_ENV
+        working-directory: frontend
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Health check frontend
+        run: |
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://crm-system-2026.vercel.app)
+          echo "Frontend status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Frontend is healthy!"
+          else
+            echo "⚠️ Frontend returned $STATUS (may still be propagating)"
+          fi
+
+  # ── Deploy Summary ───────────────────────────────
+  summary:
+    name: 📊 Deploy Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+
+    steps:
+      - name: Write summary
+        run: |
+          echo "## 🚀 Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.deploy-backend.result }} | [Render](https://crm-system-2026-5nqq.onrender.com/api/docs) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.deploy-frontend.result }} | [Vercel](https://crm-system-2026.vercel.app) |" >> $GITHUB_STEP_SUMMARY

@@ -13,4 +13,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-introduction.txt
+introduction.txt.env
+
+.vercel
+.env*
