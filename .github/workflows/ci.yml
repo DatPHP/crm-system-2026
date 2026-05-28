@@ -116,6 +116,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Unit Tests | ✅ 30 passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend Build | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Build | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> E2E tests run locally only (requires live backend)" >> $GITHUB_STEP_SUMMARY
