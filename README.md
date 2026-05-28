@@ -4,6 +4,8 @@
   <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge" alt="Status Active" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License MIT" />
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge" alt="PRs Welcome" />
+  <img src="https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Enabled" />
+  <img src="https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="CI/CD" />
 </div>
 
 <br/>
@@ -58,6 +60,8 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 
 ### ☁️ Infrastructure & Tools
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)
 ![Neon](https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=postgresql&logoColor=white)
@@ -290,9 +294,25 @@ crm-system/
 ### 1. Prerequisites
 - **Node.js** (v18 or higher)
 - **PostgreSQL** database (Local or Neon)
+- **Docker** and **Docker Compose** (optional, for containerized setup)
 - **Cloudinary** account (for image uploads)
 
-### 2. Backend Setup
+### 2. Quick Start with Docker 🐳
+The easiest way to run the application locally is using Docker Compose.
+
+```bash
+# 1. Copy the Docker environment file
+cp .env.docker .env
+
+# 2. Start the application
+docker-compose up --build
+```
+- Frontend will be available at `http://localhost:5173`
+- Backend API will be available at `http://localhost:3000/api`
+
+### 3. Manual Setup (Without Docker)
+
+#### Backend Setup
 Navigate to the backend directory, install dependencies, and setup your `.env` file:
 
 ```bash
@@ -324,7 +344,7 @@ npm run start:dev
 - API is now running at `http://localhost:3000/api`
 - Swagger Documentation is at `http://localhost:3000/api/docs`
 
-### 3. Frontend Setup
+#### Frontend Setup
 Navigate to the frontend directory, install dependencies, and configure environment variables:
 
 ```bash
@@ -348,10 +368,11 @@ npm run dev
 
 ## 🛳️ Deployment Architecture
 
-We utilize continuous deployment mechanisms for rapid delivery:
+We utilize continuous deployment mechanisms and GitHub Actions for rapid and safe delivery:
 
+- **CI/CD (GitHub Actions):** Automated workflows (`ci.yml`, `deploy.yml`) run on every push and pull request to ensure code quality (linting, tests) and trigger deployments.
 - **Frontend (Vercel):** Automatically builds and deploys the React SPA on every push to the `main` branch. Environment variables for production are managed in the Vercel dashboard.
-- **Backend (Render):** Connected to the GitHub repository. It builds the NestJS app, runs Prisma database migrations during the build step, and deploys the web service.
+- **Backend (Render):** Connected to the GitHub repository. It builds the NestJS app (either via Docker or Node), runs Prisma database migrations during the build step, and deploys the web service.
 - **Database (Neon.tech):** Serverless Postgres scales automatically and connects to the Render backend via secure connection pooling.
 
 ---
