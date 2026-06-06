@@ -1,65 +1,43 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { welcomeTemplate } from './templates/welcome.template';
+import { Resend } from 'resend';
+import { welcomeTemplate }           from './templates/welcome.template';
 import { orderConfirmationTemplate } from './templates/order-confirmation.template';
-import {
-  orderStatusTemplate,
-  statusConfig,
-  isOrderStatus,
-} from './templates/order-status.template';
-import { resetPasswordTemplate } from './templates/reset-password.template';
+import { orderStatusTemplate }       from './templates/order-status.template';
+import { resetPasswordTemplate }     from './templates/reset-password.template';
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
   private readonly logger = new Logger(MailService.name);
+  private readonly from:   string;
 
   constructor(private config: ConfigService) {
-    const host = this.config.get<string>('MAIL_HOST');
-    const auth = {
-      user: this.config.get<string>('MAIL_USER'),
-      pass: this.config.get<string>('MAIL_PASSWORD'),
-    };
-
-    if (host) {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port: this.config.get<number>('MAIL_PORT'),
-        secure: this.config.get<string>('MAIL_SECURE') === 'true',
-        auth,
-      });
-    } else {
-      this.transporter = nodemailer.createTransport({
-        service: this.config.get<string>('MAIL_SERVICE') || 'gmail',
-        auth,
-      });
-    }
-
-    // Verify connection khi khởi động
-    this.transporter.verify((error) => {
-      if (error) {
-        this.logger.error('Mail transporter error:', error);
-      } else {
-        this.logger.log('✅ Mail service ready');
-      }
-    });
+    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
+    this.from   = this.config.get<string>('MAIL_FROM') || 'CRM System <onboarding@resend.dev>';
+    this.logger.log('✅ Mail service ready (Resend)');
   }
 
   // ─── Core send method ─────────────────────────────
   private async sendMail(options: {
-    to: string;
+    to:      string;
     subject: string;
-    html: string;
+    html:    string;
   }): Promise<boolean> {
     try {
-      await this.transporter.sendMail({
-        from: this.config.get<string>('MAIL_FROM'),
-        to: options.to,
+      const { data, error } = await this.resend.emails.send({
+        from:    this.from,
+        to:      options.to,
         subject: options.subject,
-        html: options.html,
+        html:    options.html,
       });
-      this.logger.log(`✅ Email sent to ${options.to}: ${options.subject}`);
+
+      if (error) {
+        this.logger.error(`❌ Failed to send email to ${options.to}:`, error);
+        return false;
+      }
+
+      this.logger.log(`✅ Email sent to ${options.to}: ${options.subject} (id: ${data?.id})`);
       return true;
     } catch (error) {
       this.logger.error(`❌ Failed to send email to ${options.to}:`, error);
@@ -67,72 +45,65 @@ export class MailService {
     }
   }
 
-  // ─── Welcome Email ────────────────────────────────
-  async sendWelcomeEmail(name: string, email: string): Promise<boolean> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || '';
-    return await this.sendMail({
-      to: email,
+  async sendWelcomeEmail(name: string, email: string): Promise<void> {
+    await this.sendMail({
+      to:      email,
       subject: '👋 Welcome to CRM System',
-      html: welcomeTemplate(name, frontendUrl),
+      html:    welcomeTemplate(name),
     });
   }
 
-  // ─── Order Confirmation ───────────────────────────
   async sendOrderConfirmation(
     customerEmail: string,
     orderData: {
-      orderCode: string;
-      customerName: string;
+      orderCode:     string;
+      customerName:  string;
       customerEmail: string;
       items: {
         productTitle: string;
-        quantity: number;
-        unitPrice: number;
-        subtotal: number;
+        quantity:     number;
+        unitPrice:    number;
+        subtotal:     number;
       }[];
       totalPrice: number;
-      createdAt: Date;
+      createdAt:  Date;
     },
-  ): Promise<boolean> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || '';
-    return await this.sendMail({
-      to: customerEmail,
+  ): Promise<void> {
+    await this.sendMail({
+      to:      customerEmail,
       subject: `✅ Order Confirmed — ${orderData.orderCode}`,
-      html: orderConfirmationTemplate(orderData, frontendUrl),
+      html:    orderConfirmationTemplate(orderData),
     });
   }
 
-  // ─── Order Status Update ──────────────────────────
   async sendOrderStatusUpdate(
     customerEmail: string,
-    customerName: string,
-    orderCode: string,
-    status: string,
-  ): Promise<boolean> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || '';
-    const subjectPrefix = isOrderStatus(status)
-      ? statusConfig[status].label
-      : 'Order Update';
-    const emoji = isOrderStatus(status) ? statusConfig[status].emoji : '📦';
+    customerName:  string,
+    orderCode:     string,
+    status:        string,
+  ): Promise<void> {
+    const subjects: Record<string, string> = {
+      PAID:      `💳 Payment Confirmed — ${orderCode}`,
+      COMPLETED: `✅ Order Completed — ${orderCode}`,
+      CANCELLED: `❌ Order Cancelled — ${orderCode}`,
+    };
 
-    return await this.sendMail({
-      to: customerEmail,
-      subject: `${emoji} ${subjectPrefix} — ${orderCode}`,
-      html: orderStatusTemplate(customerName, orderCode, status, frontendUrl),
+    await this.sendMail({
+      to:      customerEmail,
+      subject: subjects[status] || `📦 Order Update — ${orderCode}`,
+      html:    orderStatusTemplate(customerName, orderCode, status),
     });
   }
 
-  // ─── Reset Password ───────────────────────────────
   async sendResetPassword(
-    name: string,
-    email: string,
+    name:       string,
+    email:      string,
     resetToken: string,
-  ): Promise<boolean> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || '';
-    return await this.sendMail({
-      to: email,
+  ): Promise<void> {
+    await this.sendMail({
+      to:      email,
       subject: '🔐 Reset Your Password — CRM System',
-      html: resetPasswordTemplate(name, resetToken, frontendUrl),
+      html:    resetPasswordTemplate(name, resetToken),
     });
   }
 }
