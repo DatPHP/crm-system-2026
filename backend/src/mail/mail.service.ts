@@ -14,7 +14,14 @@ export class MailService {
   private readonly frontendUrl: string;
 
   constructor(private config: ConfigService) {
-    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+
+    if (!apiKey) {
+      this.logger.warn('⚠️ RESEND_API_KEY not set — email disabled');
+      return; // không crash app
+    }
+
+    this.resend = new Resend(apiKey);
     this.from =
       this.config.get<string>('MAIL_FROM') ||
       'CRM System <onboarding@resend.dev>';
@@ -30,6 +37,10 @@ export class MailService {
     subject: string;
     html: string;
   }): Promise<boolean> {
+    if (!this.resend) {
+      this.logger.warn('⚠️ Email skipped — Resend not initialized');
+      return false;
+    }
     try {
       const { data, error } = await this.resend.emails.send({
         from: this.from,
