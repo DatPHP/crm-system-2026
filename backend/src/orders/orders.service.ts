@@ -8,10 +8,14 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { paginate } from '../common/interfaces/paginated.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+  ) {}
 
   // Generate order code: ORD-20260516-001
   private async generateOrderCode(): Promise<string> {
@@ -90,7 +94,7 @@ export class OrdersService {
 
   // ─── CREATE ORDER (Transaction) ────────────────────────
   async create(dto: CreateOrderDto, userId: number) {
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       const customer = await tx.customer.findUnique({
         where: { id: dto.customerId },
       });
@@ -171,9 +175,37 @@ export class OrdersService {
           createdById: userId,
         },
       });
-
       return order;
     });
+
+    // Gửi confirmation email (ngoài transaction)
+    const fullOrder = await this.prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        customer: true,
+        orderItems: { include: { product: true } },
+      },
+    });
+
+    if (fullOrder && fullOrder.customer && fullOrder.customer.email) {
+      this.mailService
+        .sendOrderConfirmation(fullOrder.customer.email, {
+          orderCode: fullOrder.orderCode,
+          customerName: fullOrder.customer.fullName,
+          customerEmail: fullOrder.customer.email,
+          items: fullOrder.orderItems.map((item) => ({
+            productTitle: item.product.title,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+            subtotal: Number(item.subtotal),
+          })),
+          totalPrice: Number(fullOrder.totalPrice),
+          createdAt: fullOrder.createdAt,
+        })
+        .catch(() => {});
+    }
+
+    return order;
   }
 
   // ─── UPDATE ORDER ──────────────────────────────────────
@@ -204,6 +236,25 @@ export class OrdersService {
           createdById: userId,
         },
       });
+    }
+
+    // Gửi status update email nếu đổi status
+    if (dto.status && dto.status !== order.status) {
+      const orderWithCustomer = await this.prisma.order.findUnique({
+        where: { id },
+        include: { customer: true },
+      });
+
+      if (orderWithCustomer?.customer?.email) {
+        this.mailService
+          .sendOrderStatusUpdate(
+            orderWithCustomer.customer.email,
+            orderWithCustomer.customer.fullName,
+            orderWithCustomer.orderCode,
+            dto.status,
+          )
+          .catch(() => {});
+      }
     }
 
     return updated;

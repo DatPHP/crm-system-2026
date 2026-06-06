@@ -28,6 +28,7 @@ model User {
   orders         Order[]        @relation("CreatedByUser")
   orderHistories OrderHistory[] @relation("HistoryByUser")
   refreshTokens  RefreshToken[]
+  passwordResetToken PasswordResetToken?
 
   @@map("users")
 }
@@ -165,4 +166,15 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@map("refresh_tokens")
+}
+// ==================== PASSWORD RESET TOKENS ====================
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
 }

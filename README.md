@@ -15,6 +15,7 @@ A full-stack CRM system for managing orders, products, customers, and categories
 🌐 **Live Demo:** [https://crm-system-2026.vercel.app](https://crm-system-2026.vercel.app)
 
 > **Demo Account**
+>
 > - **Email:** `admin@gmail.com`
 > - **Password:** `password123`
 
@@ -22,7 +23,7 @@ A full-stack CRM system for managing orders, products, customers, and categories
 
 ## 📸 Feature Screenshots
 
-*(Add your actual screenshots below)*
+_(Add your actual screenshots below)_
 
 <div align="center">
   <img src="https://drive.google.com/file/d/1mR2IG6JJ0sOaG0OPiuFxPHAqYrwa279U/view?text=Dashboard+Overview" alt="Dashboard" width="800" />
@@ -45,6 +46,7 @@ A full-stack CRM system for managing orders, products, customers, and categories
 Our tech stack is carefully chosen to ensure scalability, type safety, and an excellent developer experience.
 
 ### 💻 Frontend
+
 ![React](https://img.shields.io/badge/React_19-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite_8-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
@@ -53,6 +55,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Zustand](https://img.shields.io/badge/Zustand-20232A?style=for-the-badge&logo=react&logoColor=white)
 
 ### ⚙️ Backend
+
 ![NestJS](https://img.shields.io/badge/NestJS_11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma_6-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
@@ -60,6 +63,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 
 ### ☁️ Infrastructure & Tools
+
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
@@ -77,20 +81,20 @@ The system follows a modern decoupled architecture where the React frontend comm
 graph TD
     Client[Web Browser] -->|HTTPS / REST| CDN[Vercel CDN - Frontend]
     Client -->|HTTPS / REST| API[Render - NestJS Backend]
-    
+
     subgraph Frontend [React SPA]
         CDN --> ReactQuery[React Query Cache]
         ReactQuery --> Components[UI Components]
         Components --> Zustand[Global State]
     end
-    
+
     subgraph Backend [NestJS Server]
         API --> Guards[JWT Auth & RBAC Guards]
         Guards --> Controllers[Controllers]
         Controllers --> Services[Business Logic Services]
         Services --> Prisma[Prisma ORM]
     end
-    
+
     subgraph External Services
         Services -->|Upload Image| Cloudinary[Cloudinary]
     end
@@ -107,11 +111,13 @@ graph TD
 The system enforces security using a strict JWT-based Role-Based Access Control mechanism.
 
 We define three primary roles:
+
 - **`SUPER_ADMIN`**: Complete access to all system features, including system configuration and promoting users.
 - **`ADMIN`**: Can manage orders, products, categories, and customers.
 - **`STAFF`**: Restricted access. Can view orders and create new ones, but cannot delete records or manage users.
 
 **Implementation Highlight:**
+
 ```typescript
 // Roles are enforced at the controller level using custom decorators
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -136,7 +142,7 @@ erDiagram
         Role role
         Boolean isActive
     }
-    
+
     customers {
         Int id PK
         String fullName
@@ -196,14 +202,14 @@ erDiagram
     users ||--o{ orders : "creates"
     users ||--o{ order_histories : "logs"
     users ||--o{ refresh_tokens : "owns"
-    
+
     customers ||--o{ orders : "places"
-    
+
     categories ||--o{ categories : "parent/child"
     categories ||--o{ products : "contains"
-    
+
     products ||--o{ order_items : "included_in"
-    
+
     orders ||--|{ order_items : "has"
     orders ||--o{ order_histories : "tracks"
 ```
@@ -226,20 +232,20 @@ sequenceDiagram
     Guard-->>Client: 401 Unauthorized (If invalid)
     Guard->>Controller: Token Valid (User Info Injected)
     Controller->>Service: createOrder(dto, userId)
-    
+
     Service->>DB: BEGIN TRANSACTION
     DB-->>Service: Transaction Started
-    
+
     Service->>DB: Verify Customer & Product Stock
     DB-->>Service: Stock Available
-    
+
     Service->>DB: Insert Order & OrderItems
     Service->>DB: Decrement Product Stock
     Service->>DB: Insert OrderHistory (Audit Log)
-    
+
     Service->>DB: COMMIT TRANSACTION
     DB-->>Service: Success
-    
+
     Service-->>Controller: Return Order Data
     Controller-->>Client: 201 Created (JSON)
 ```
@@ -292,12 +298,14 @@ crm-system/
 ## 🚀 Environment Setup & Local Development
 
 ### 1. Prerequisites
+
 - **Node.js** (v18 or higher)
 - **PostgreSQL** database (Local or Neon)
 - **Docker** and **Docker Compose** (optional, for containerized setup)
 - **Cloudinary** account (for image uploads)
 
 ### 2. Quick Start with Docker 🐳
+
 The easiest way to run the application locally is using Docker Compose.
 
 ```bash
@@ -307,12 +315,14 @@ cp .env.docker .env
 # 2. Start the application
 docker-compose up --build
 ```
+
 - Frontend will be available at `http://localhost:5173`
 - Backend API will be available at `http://localhost:3000/api`
 
 ### 3. Manual Setup (Without Docker)
 
 #### Backend Setup
+
 Navigate to the backend directory, install dependencies, and setup your `.env` file:
 
 ```bash
@@ -322,6 +332,7 @@ cp .env.example .env
 ```
 
 **Required `.env` variables (Backend):**
+
 ```env
 DATABASE_URL="postgresql://user:pass@localhost:5432/crm?schema=public"
 JWT_SECRET="your_super_secret_jwt_key"
@@ -336,15 +347,18 @@ CLOUDINARY_API_SECRET="your_api_secret"
 ```
 
 **Run Database Migrations & Start Server:**
+
 ```bash
 npx prisma migrate dev --name init
 npx prisma db seed # If you have a seed script
 npm run start:dev
 ```
+
 - API is now running at `http://localhost:3000/api`
 - Swagger Documentation is at `http://localhost:3000/api/docs`
 
 #### Frontend Setup
+
 Navigate to the frontend directory, install dependencies, and configure environment variables:
 
 ```bash
@@ -354,14 +368,17 @@ cp .env.example .env
 ```
 
 **Required `.env` variables (Frontend):**
+
 ```env
 VITE_API_URL="http://localhost:3000/api"
 ```
 
 **Start the Development Server:**
+
 ```bash
 npm run dev
 ```
+
 - App is running at `http://localhost:5173`
 
 ---
@@ -380,9 +397,11 @@ We utilize continuous deployment mechanisms and GitHub Actions for rapid and saf
 ## 👨‍💻 Author
 
 **Dat**
+
 - GitHub: [@DatPHP](https://github.com/DatPHP)
 - Live Demo: [crm-system-2026.vercel.app](https://crm-system-2026.vercel.app)
 - Henry here -2026
+
 ---
 
 ## 📄 License

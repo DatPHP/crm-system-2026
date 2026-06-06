@@ -11,14 +11,17 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { MailService } from '../mail/mail.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService:  UsersService,
-    private jwtService:    JwtService,
+    private usersService: UsersService,
+    private jwtService: JwtService,
     private configService: ConfigService,
-    private prisma:        PrismaService,
+    private prisma: PrismaService,
+    private mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -27,16 +30,25 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const user = await this.usersService.create({
-      name:     dto.name,
-      email:    dto.email,
+      name: dto.name,
+      email: dto.email,
       password: hashedPassword,
     });
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    // Gửi welcome email (không await — không block response)
+    this.mailService.sendWelcomeEmail(user.name, user.email).catch(() => {});
+
     return {
       message: 'Register successful',
       ...tokens,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 
@@ -51,13 +63,18 @@ export class AuthService {
     return {
       message: 'Login successful',
       ...tokens,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 
   async refresh(refreshToken: string) {
     const tokenRecord = await this.prisma.refreshToken.findUnique({
-      where:   { token: refreshToken },
+      where: { token: refreshToken },
       include: { user: true },
     });
 
@@ -67,7 +84,9 @@ export class AuthService {
 
     if (tokenRecord.expiresAt < new Date()) {
       await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
-      throw new UnauthorizedException('Refresh token expired, please login again');
+      throw new UnauthorizedException(
+        'Refresh token expired, please login again',
+      );
     }
 
     await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
@@ -82,10 +101,10 @@ export class AuthService {
       message: 'Token refreshed',
       ...tokens,
       user: {
-        id:    tokenRecord.user.id,
-        name:  tokenRecord.user.name,
+        id: tokenRecord.user.id,
+        name: tokenRecord.user.name,
         email: tokenRecord.user.email,
-        role:  tokenRecord.user.role,
+        role: tokenRecord.user.role,
       },
     };
   }
@@ -104,7 +123,7 @@ export class AuthService {
     );
 
     const refreshToken = uuidv4();
-    const expiresAt    = new Date();
+    const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.prisma.refreshToken.create({
@@ -112,5 +131,65 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  // Thêm forgotPassword
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findByEmail(email);
+
+    // Không báo lỗi nếu email không tồn tại — bảo mật
+    if (!user) {
+      return { message: 'If email exists, reset link has been sent' };
+    }
+
+    // Tạo reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
+
+    // Lưu vào DB
+    await this.prisma.passwordResetToken.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, token: hashedToken, expiresAt },
+      update: { token: hashedToken, expiresAt },
+    });
+
+    // Gửi email
+    await this.mailService.sendResetPassword(user.name, user.email, resetToken);
+
+    return { message: 'If email exists, reset link has been sent' };
+  }
+
+  // Thêm resetPassword
+  async resetPassword(token: string, newPassword: string) {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const resetRecord = await this.prisma.passwordResetToken.findUnique({
+      where: { token: hashedToken },
+      include: { user: true },
+    });
+
+    if (!resetRecord || resetRecord.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    // Hash password mới
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: resetRecord.userId },
+      data: { password: hashedPassword },
+    });
+
+    // Xóa token đã dùng
+    await this.prisma.passwordResetToken.delete({
+      where: { id: resetRecord.id },
+    });
+
+    return { message: 'Password reset successfully' };
   }
 }
