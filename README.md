@@ -61,6 +61,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
+![Resend](https://img.shields.io/badge/Resend-black?style=for-the-badge&logo=minutemailer&logoColor=white)
 
 ### ☁️ Infrastructure & Tools
 
@@ -97,6 +98,7 @@ graph TD
 
     subgraph External Services
         Services -->|Upload Image| Cloudinary[Cloudinary]
+        Services -->|Send Email| Resend[Resend API]
     end
 
     subgraph Database
@@ -199,9 +201,17 @@ erDiagram
         Int userId FK
     }
 
+    password_reset_tokens {
+        Int id PK
+        String token
+        Int userId FK
+        DateTime expiresAt
+    }
+
     users ||--o{ orders : "creates"
     users ||--o{ order_histories : "logs"
     users ||--o{ refresh_tokens : "owns"
+    users ||--o| password_reset_tokens : "owns"
 
     customers ||--o{ orders : "places"
 
@@ -285,6 +295,7 @@ crm-system/
     │   ├── export/               # Excel & PDF generation logic
     │   ├── filters/              # Global exception handling
     │   ├── guards/               # AuthGuard & RolesGuard
+    │   ├── mail/                 # Email delivery via Resend & templates
     │   ├── orders/               # Order & Inventory management API
     │   ├── prisma/               # Prisma service wrapper
     │   ├── products/             # Product management API
@@ -344,6 +355,11 @@ JWT_REFRESH_EXPIRES_IN="7d"
 CLOUDINARY_CLOUD_NAME="your_cloud_name"
 CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
+
+# Resend API (For email sending)
+RESEND_API_KEY="re_123456789"
+MAIL_FROM="CRM System <onboarding@resend.dev>"
+FRONTEND_URL="http://localhost:5173"
 ```
 
 **Run Database Migrations & Start Server:**
