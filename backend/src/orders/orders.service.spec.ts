@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
 
 // ─── MOCK DATA ────────────────────────────────────────
 const mockCustomer = {
@@ -58,6 +59,10 @@ const mockPrismaService = {
   $transaction: jest.fn(),
 };
 
+const mockMailService = {
+  sendMail: jest.fn(),
+};
+
 // ─── TEST SUITE ───────────────────────────────────────
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -67,6 +72,7 @@ describe('OrdersService', () => {
       providers: [
         OrdersService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 

@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
 
 // ─── MOCK BCRYPT toàn bộ module ───────────────────────
 jest.mock('bcrypt', () => ({
@@ -49,6 +50,12 @@ const mockPrismaService = {
   },
 };
 
+const mockMailService = {
+  sendMail: jest.fn(),
+  sendWelcomeEmail: jest.fn().mockResolvedValue({}),
+  sendPasswordResetEmail: jest.fn().mockResolvedValue({}),
+};
+
 // ─── TEST SUITE ───────────────────────────────────────
 describe('AuthService', () => {
   let service: AuthService;
@@ -61,6 +68,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
