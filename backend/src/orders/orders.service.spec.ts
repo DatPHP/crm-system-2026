@@ -3,6 +3,7 @@ import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
+import { CacheService } from '../cache/cache.service';
 
 // ─── MOCK DATA ────────────────────────────────────────
 const mockCustomer = {
@@ -61,6 +62,16 @@ const mockPrismaService = {
 
 const mockMailService = {
   sendMail: jest.fn(),
+  sendOrderStatusUpdate: jest.fn().mockResolvedValue({}),
+  sendOrderConfirmation: jest.fn().mockResolvedValue({}),
+};
+
+const mockCacheService = {
+  get:       jest.fn().mockResolvedValue(null),
+  set:       jest.fn().mockResolvedValue(undefined),
+  del:       jest.fn().mockResolvedValue(undefined),
+  delPattern:jest.fn().mockResolvedValue(undefined),
+  getOrSet:  jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
 };
 
 // ─── TEST SUITE ───────────────────────────────────────
@@ -73,6 +84,7 @@ describe('OrdersService', () => {
         OrdersService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MailService, useValue: mockMailService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
@@ -92,6 +104,11 @@ describe('OrdersService', () => {
       expect(result.meta.total).toBe(1);
       expect(result.meta.page).toBe(1);
       expect(result.meta.totalPages).toBe(1);
+      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
+        'orders:all:1:10',
+        expect.any(Number),
+        expect.any(Function),
+      );
     });
 
     it('should filter by search term', async () => {
@@ -120,6 +137,11 @@ describe('OrdersService', () => {
       const result = await service.findOne(1);
 
       expect(result.orderCode).toBe('ORD-20260521-001');
+      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
+        'orders:1',
+        expect.any(Number),
+        expect.any(Function),
+      );
     });
 
     it('should throw NotFoundException if order not found', async () => {
@@ -160,6 +182,9 @@ describe('OrdersService', () => {
 
       expect(result.orderCode).toBe('ORD-20260521-001');
       expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
     });
 
     it('should throw NotFoundException if customer not found', async () => {
@@ -242,6 +267,10 @@ describe('OrdersService', () => {
 
       const result = await service.cancel(1, 1);
       expect(result.status).toBe('CANCELLED');
+
+      expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
     });
 
     it('should throw BadRequestException if already cancelled', async () => {
@@ -272,6 +301,25 @@ describe('OrdersService', () => {
       );
 
       await expect(service.cancel(1, 1)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('update()', () => {
+    it('should update order successfully', async () => {
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.order.update.mockResolvedValue({ ...mockOrder, status: 'COMPLETED' });
+
+      const dto = { status: 'COMPLETED' as const };
+      const result = await service.update(1, dto, 1);
+      
+      expect(result.status).toBe('COMPLETED');
+      expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
+    });
+
+    it('should throw NotFoundException if order not found', async () => {
+      mockPrismaService.order.findUnique.mockResolvedValue(null);
+      await expect(service.update(999, {}, 1)).rejects.toThrow(NotFoundException);
     });
   });
 });

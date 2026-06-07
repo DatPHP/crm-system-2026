@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { CacheService } from 'src/cache/cache.service';
 
 const mockProduct = {
   id: 1,
@@ -25,6 +26,15 @@ const mockPrismaService = {
   },
 };
 
+// Thêm mock CacheService
+const mockCacheService = {
+  get:       jest.fn().mockResolvedValue(null),
+  set:       jest.fn().mockResolvedValue(undefined),
+  del:       jest.fn().mockResolvedValue(undefined),
+  delPattern:jest.fn().mockResolvedValue(undefined),
+  getOrSet:  jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
+};
+
 describe('ProductsService', () => {
   let service: ProductsService;
 
@@ -33,6 +43,7 @@ describe('ProductsService', () => {
       providers: [
         ProductsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
@@ -52,6 +63,11 @@ describe('ProductsService', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
+      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
+        'products:all:all:1:10',
+        expect.any(Number),
+        expect.any(Function),
+      );
     });
 
     it('should filter by search', async () => {
@@ -74,6 +90,11 @@ describe('ProductsService', () => {
 
       const result = await service.findOne(1);
       expect(result.sku).toBe('IP15-001');
+      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
+        'products:1',
+        expect.any(Number),
+        expect.any(Function),
+      );
     });
 
     it('should throw NotFoundException', async () => {
@@ -98,6 +119,10 @@ describe('ProductsService', () => {
 
       const result = await service.create(createDto);
       expect(result.sku).toBe('IP15-001');
+      
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
+      expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
+      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${createDto.categoryId}`);
     });
 
     it('should throw ConflictException if SKU exists', async () => {
@@ -116,12 +141,36 @@ describe('ProductsService', () => {
 
       const result = await service.remove(1);
       expect(result.id).toBe(1);
+
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
+      expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
+      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${mockProduct.categoryId}`);
     });
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.product.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('update()', () => {
+    it('should update product successfully', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
+      mockPrismaService.product.update.mockResolvedValue(mockProduct);
+
+      const dto = { title: 'New iPhone' };
+      const result = await service.update(1, dto);
+      expect(result.sku).toBe('IP15-001');
+
+      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
+      expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
+      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${mockProduct.categoryId}`);
+    });
+
+    it('should throw NotFoundException if product not found', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      await expect(service.update(999, {})).rejects.toThrow(NotFoundException);
     });
   });
 });
