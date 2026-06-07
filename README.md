@@ -6,6 +6,7 @@
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Enabled" />
   <img src="https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="CI/CD" />
+  <img src="https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis Upstash" />
 </div>
 
 <br/>
@@ -22,8 +23,6 @@ A full-stack CRM system for managing orders, products, customers, and categories
 ---
 
 ## 📸 Feature Screenshots
-
-_(Add your actual screenshots below)_
 
 <div align="center">
   <img src="https://drive.google.com/file/d/1mR2IG6JJ0sOaG0OPiuFxPHAqYrwa279U/view?text=Dashboard+Overview" alt="Dashboard" width="800" />
@@ -62,6 +61,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 ![Resend](https://img.shields.io/badge/Resend-black?style=for-the-badge&logo=minutemailer&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
 ### ☁️ Infrastructure & Tools
 
@@ -70,13 +70,14 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)
 ![Neon](https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=postgresql&logoColor=white)
+![Upstash](https://img.shields.io/badge/Upstash-00E9A3?style=for-the-badge&logo=upstash&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
 ---
 
 ## 🏗️ Architecture Diagram
 
-The system follows a modern decoupled architecture where the React frontend communicates with the NestJS REST API.
+The system follows a modern decoupled architecture where the React frontend communicates with the NestJS REST API. A Redis cache layer (via Upstash) sits between the business logic and the database to minimize latency on hot read paths.
 
 ```mermaid
 graph TD
@@ -93,18 +94,64 @@ graph TD
         API --> Guards[JWT Auth & RBAC Guards]
         Guards --> Controllers[Controllers]
         Controllers --> Services[Business Logic Services]
-        Services --> Prisma[Prisma ORM]
+        Services --> Cache[CacheService]
+        Cache -->|Cache HIT| Services
+        Cache -->|Cache MISS| Prisma[Prisma ORM]
+        Services --> Prisma
     end
 
     subgraph External Services
         Services -->|Upload Image| Cloudinary[Cloudinary]
         Services -->|Send Email| Resend[Resend API]
+        Cache -->|GET / SET / DEL| Redis[(Upstash Redis)]
     end
 
     subgraph Database
         Prisma -->|TCP / Connection Pool| DB[(Neon Serverless PostgreSQL)]
     end
 ```
+
+---
+
+## ⚡ Redis Caching Layer
+
+The backend features a global **`CacheModule`** powered by [Upstash Redis](https://upstash.com/) — a serverless Redis service that works seamlessly with Render deployments without any self-hosted infrastructure.
+
+### How it works
+
+The `CacheService` wraps Upstash's HTTP-based Redis client and is registered as a **`@Global()`** NestJS module, making it injectable anywhere in the application without extra imports.
+
+```typescript
+// Predefined TTL constants (in seconds)
+static readonly TTL = {
+  DASHBOARD: 60 * 5,    // 5 minutes
+  CATEGORIES: 60 * 30,  // 30 minutes
+  PRODUCTS: 60 * 5,     // 5 minutes
+  ORDERS: 60 * 2,       // 2 minutes
+  CUSTOMERS: 60 * 5,    // 5 minutes
+};
+```
+
+### Cache operations
+
+| Method | Description |
+|---|---|
+| `get<T>(key)` | Read a value from Redis. Returns `null` on miss or error. |
+| `set(key, value, ttl)` | Write a value with a TTL using `SETEX`. |
+| `del(key)` | Invalidate a single cache key. |
+| `delPattern(pattern)` | Invalidate all keys matching a glob pattern (e.g. `orders:*`). |
+| `getOrSet(key, ttl, fetcher)` | Read-through helper: returns cached value or calls `fetcher()`, stores result, and returns it. |
+
+### Cache strategy per module
+
+| Module | Keys | TTL | Invalidated on |
+|---|---|---|---|
+| **Dashboard** | `dashboard:summary` | 5 min | Order create / update / delete |
+| **Orders** | `orders:list:*`, `orders:detail:*` | 2 min | Order create / update / delete |
+| **Products** | `products:list:*`, `products:detail:*` | 5 min | Product create / update / delete |
+| **Categories** | `categories:all`, `categories:<id>` | 30 min | Category / product mutation |
+
+> **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching. No restart required.
 
 ---
 
@@ -228,7 +275,34 @@ erDiagram
 
 ## 🔄 API Request Flow
 
-A typical flow for creating an order (with transaction and validation):
+A typical flow for a cached read (e.g. listing orders):
+
+```mermaid
+sequenceDiagram
+    participant Client as React App
+    participant Guard as JWT & RBAC Guard
+    participant Service as OrdersService
+    participant Cache as CacheService (Redis)
+    participant DB as Prisma (PostgreSQL)
+
+    Client->>Guard: GET /api/orders (JWT Token)
+    Guard-->>Client: 401 Unauthorized (If invalid)
+    Guard->>Service: Token valid
+
+    Service->>Cache: get("orders:list:...")
+    alt Cache HIT
+        Cache-->>Service: Cached JSON ✅
+        Service-->>Client: 200 OK (from cache)
+    else Cache MISS
+        Cache-->>Service: null
+        Service->>DB: SELECT orders ...
+        DB-->>Service: Rows
+        Service->>Cache: set("orders:list:...", data, 120s)
+        Service-->>Client: 200 OK (from DB)
+    end
+```
+
+A typical flow for creating an order (write path with cache invalidation):
 
 ```mermaid
 sequenceDiagram
@@ -237,6 +311,7 @@ sequenceDiagram
     participant Controller as OrdersController
     participant Service as OrdersService
     participant DB as Prisma (PostgreSQL)
+    participant Cache as CacheService (Redis)
 
     Client->>Guard: POST /api/orders (JWT Token)
     Guard-->>Client: 401 Unauthorized (If invalid)
@@ -255,6 +330,10 @@ sequenceDiagram
 
     Service->>DB: COMMIT TRANSACTION
     DB-->>Service: Success
+
+    Service->>Cache: del("dashboard:summary")
+    Service->>Cache: delPattern("orders:*")
+    Service->>Cache: delPattern("products:*")
 
     Service-->>Controller: Return Order Data
     Controller-->>Client: 201 Created (JSON)
@@ -286,6 +365,9 @@ crm-system/
     │   └── schema.prisma         # Database schema & migrations
     ├── src/
     │   ├── auth/                 # JWT Authentication & Tokens
+    │   ├── cache/                # ⚡ Redis cache layer (Upstash)
+    │   │   ├── cache.module.ts   #   Global @Module
+    │   │   └── cache.service.ts  #   get / set / del / delPattern / getOrSet
     │   ├── categories/           # Category management API
     │   ├── common/               # Shared DTOs, interfaces
     │   ├── config/               # Environment & Cloudinary config
@@ -314,6 +396,7 @@ crm-system/
 - **PostgreSQL** database (Local or Neon)
 - **Docker** and **Docker Compose** (optional, for containerized setup)
 - **Cloudinary** account (for image uploads)
+- **Upstash** account (optional, for Redis caching)
 
 ### 2. Quick Start with Docker 🐳
 
@@ -351,16 +434,22 @@ JWT_EXPIRES_IN="1d"
 JWT_REFRESH_SECRET="your_refresh_secret"
 JWT_REFRESH_EXPIRES_IN="7d"
 
-# Cloudinary (Optional, for product images)
+# Cloudinary (for product images)
 CLOUDINARY_CLOUD_NAME="your_cloud_name"
 CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
 
-# Resend API (For email sending)
+# Resend API (for email sending)
 RESEND_API_KEY="re_123456789"
 MAIL_FROM="CRM System <onboarding@resend.dev>"
 FRONTEND_URL="http://localhost:5173"
+
+# Upstash Redis (optional — caching is disabled if omitted)
+UPSTASH_REDIS_REST_URL="https://<your-db>.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your_upstash_token"
 ```
+
+> **Note:** The `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` variables are **optional**. If they are not provided, the `CacheService` will log a warning and the application will operate normally without caching.
 
 **Run Database Migrations & Start Server:**
 
@@ -407,6 +496,7 @@ We utilize continuous deployment mechanisms and GitHub Actions for rapid and saf
 - **Frontend (Vercel):** Automatically builds and deploys the React SPA on every push to the `main` branch. Environment variables for production are managed in the Vercel dashboard.
 - **Backend (Render):** Connected to the GitHub repository. It builds the NestJS app (either via Docker or Node), runs Prisma database migrations during the build step, and deploys the web service.
 - **Database (Neon.tech):** Serverless Postgres scales automatically and connects to the Render backend via secure connection pooling.
+- **Cache (Upstash):** Serverless Redis accessed over HTTPS REST API. No additional infrastructure needed — set two environment variables in Render and caching is enabled automatically.
 
 ---
 
@@ -416,7 +506,7 @@ We utilize continuous deployment mechanisms and GitHub Actions for rapid and saf
 
 - GitHub: [@DatPHP](https://github.com/DatPHP)
 - Live Demo: [crm-system-2026.vercel.app](https://crm-system-2026.vercel.app)
-- Henry here -2026
+- Henry here - 2026
 
 ---
 
