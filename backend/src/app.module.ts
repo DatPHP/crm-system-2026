@@ -11,6 +11,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ExportModule } from './export/export.module';
 import { UploadModule } from './upload/upload.module';
 import { MailModule } from './mail/mail.module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { MailModule } from './mail/mail.module';
     ProductsModule,
     CustomersModule,
     DashboardModule,
+    CacheModule,
     OrdersModule,
     ExportModule,
     UploadModule,

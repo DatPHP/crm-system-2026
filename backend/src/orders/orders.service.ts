@@ -9,12 +9,14 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { paginate } from '../common/interfaces/paginated.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { MailService } from '../mail/mail.service';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private cache: CacheService,
   ) {}
 
   // Generate order code: ORD-20260516-001
@@ -34,62 +36,70 @@ export class OrdersService {
     const limit = pagination?.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            { orderCode: { contains: search, mode: 'insensitive' as const } },
-            {
-              customer: {
-                fullName: { contains: search, mode: 'insensitive' as const },
+    const cacheKey = `orders:${search || 'all'}:${page}:${limit}`;
+
+    return this.cache.getOrSet(cacheKey, CacheService.TTL.ORDERS, async () => {
+      const where = search
+        ? {
+            OR: [
+              { orderCode: { contains: search, mode: 'insensitive' as const } },
+              {
+                customer: {
+                  fullName: { contains: search, mode: 'insensitive' as const },
+                },
+              },
+            ],
+          }
+        : {};
+
+      const [data, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          include: {
+            customer: { select: { id: true, fullName: true, phone: true } },
+            createdBy: { select: { id: true, name: true } },
+            orderItems: {
+              include: {
+                product: { select: { id: true, title: true, sku: true } },
               },
             },
-          ],
-        }
-      : {};
-
-    const [data, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where,
-        include: {
-          customer: { select: { id: true, fullName: true, phone: true } },
-          createdBy: { select: { id: true, name: true } },
-          orderItems: {
-            include: {
-              product: { select: { id: true, title: true, sku: true } },
-            },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.order.count({ where }),
-    ]);
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
 
-    return paginate(data, total, page, limit);
+      return paginate(data, total, page, limit);
+    });
   }
 
   // ─── GET ONE ───────────────────────────────────────────
   async findOne(id: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: {
-        customer: true,
-        createdBy: { select: { id: true, name: true } },
-        orderItems: {
-          include: { product: true },
-        },
-        orderHistories: {
-          include: {
-            createdBy: { select: { id: true, name: true } },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const cacheKey = `orders:${id}`;
 
-    if (!order) throw new NotFoundException('Order not found');
-    return order;
+    return this.cache.getOrSet(cacheKey, CacheService.TTL.ORDERS, async () => {
+      const order = await this.prisma.order.findUnique({
+        where: { id },
+        include: {
+          customer: true,
+          createdBy: { select: { id: true, name: true } },
+          orderItems: {
+            include: { product: true },
+          },
+          orderHistories: {
+            include: {
+              createdBy: { select: { id: true, name: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
+
+      if (!order) throw new NotFoundException('Order not found');
+      return order;
+    });
   }
 
   // ─── CREATE ORDER (Transaction) ────────────────────────
@@ -205,12 +215,17 @@ export class OrdersService {
         .catch(() => {});
     }
 
+    await this.cache.del('dashboard:summary');
+    await this.cache.delPattern('orders:*');
+    await this.cache.delPattern('products:*');
+
     return order;
   }
 
   // ─── UPDATE ORDER ──────────────────────────────────────
   async update(id: number, dto: UpdateOrderDto, userId: number) {
-    const order = await this.findOne(id);
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
 
     // Không cho update order đã CANCELLED
     if (order.status === 'CANCELLED') {
@@ -257,12 +272,15 @@ export class OrdersService {
       }
     }
 
+    await this.cache.del('dashboard:summary');
+    await this.cache.delPattern('orders:*');
+
     return updated;
   }
 
   // ─── CANCEL ORDER (hoàn stock) ─────────────────────────
   async cancel(id: number, userId: number) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id },
         include: { orderItems: true },
@@ -304,5 +322,11 @@ export class OrdersService {
 
       return updated;
     });
+
+    await this.cache.del('dashboard:summary');
+    await this.cache.delPattern('orders:*');
+    await this.cache.delPattern('products:*');
+
+    return result;
   }
 }

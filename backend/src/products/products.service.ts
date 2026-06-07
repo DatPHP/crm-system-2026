@@ -8,10 +8,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { paginate } from '../common/interfaces/paginated.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async findAll(
     search?: string,
@@ -22,37 +26,53 @@ export class ProductsService {
     const limit = pagination?.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where = {
-      ...(categoryId && { categoryId }),
-      ...(search && {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' as const } },
-          { sku: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
-    };
+    const cacheKey = `products:${search || 'all'}:${categoryId || 'all'}:${page}:${limit}`;
 
-    const [data, total] = await Promise.all([
-      this.prisma.product.findMany({
-        where,
-        include: { category: { select: { id: true, name: true } } },
-        orderBy: { id: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.product.count({ where }),
-    ]);
+    return this.cache.getOrSet(
+      cacheKey,
+      CacheService.TTL.PRODUCTS,
+      async () => {
+        const where = {
+          ...(categoryId && { categoryId }),
+          ...(search && {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' as const } },
+              { sku: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }),
+        };
 
-    return paginate(data, total, page, limit);
+        const [data, total] = await Promise.all([
+          this.prisma.product.findMany({
+            where,
+            include: { category: { select: { id: true, name: true } } },
+            orderBy: { id: 'desc' },
+            skip,
+            take: limit,
+          }),
+          this.prisma.product.count({ where }),
+        ]);
+
+        return paginate(data, total, page, limit);
+      },
+    );
   }
 
   async findOne(id: number) {
-    const product = await this.prisma.product.findUnique({
-      where: { id },
-      include: { category: true },
-    });
-    if (!product) throw new NotFoundException('Product not found');
-    return product;
+    const cacheKey = `products:${id}`;
+
+    return this.cache.getOrSet(
+      cacheKey,
+      CacheService.TTL.PRODUCTS,
+      async () => {
+        const product = await this.prisma.product.findUnique({
+          where: { id },
+          include: { category: true },
+        });
+        if (!product) throw new NotFoundException('Product not found');
+        return product;
+      },
+    );
   }
 
   async create(dto: CreateProductDto) {
@@ -62,7 +82,7 @@ export class ProductsService {
     });
     if (existing) throw new ConflictException('SKU already exists');
 
-    return this.prisma.product.create({
+    const newProduct = await this.prisma.product.create({
       data: {
         title: dto.title,
         sku: dto.sku,
@@ -75,19 +95,44 @@ export class ProductsService {
       },
       include: { category: true },
     });
+
+    await this.cache.delPattern('products:*');
+    await this.cache.del('categories:all');
+    await this.cache.del(`categories:${dto.categoryId}`);
+
+    return newProduct;
   }
 
   async update(id: number, dto: UpdateProductDto) {
-    await this.findOne(id);
-    return this.prisma.product.update({
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Product not found');
+
+    const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: dto,
       include: { category: true },
     });
+
+    await this.cache.delPattern('products:*');
+    await this.cache.del('categories:all');
+    await this.cache.del(`categories:${existing.categoryId}`);
+    if (dto.categoryId && dto.categoryId !== existing.categoryId) {
+      await this.cache.del(`categories:${dto.categoryId}`);
+    }
+
+    return updatedProduct;
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.product.delete({ where: { id } });
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Product not found');
+
+    const deletedProduct = await this.prisma.product.delete({ where: { id } });
+
+    await this.cache.delPattern('products:*');
+    await this.cache.del('categories:all');
+    await this.cache.del(`categories:${existing.categoryId}`);
+
+    return deletedProduct;
   }
 }
