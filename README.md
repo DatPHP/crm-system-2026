@@ -7,11 +7,12 @@
   <img src="https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Enabled" />
   <img src="https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="CI/CD" />
   <img src="https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis Upstash" />
+  <img src="https://img.shields.io/badge/WebSocket-Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="WebSocket Socket.io" />
 </div>
 
 <br/>
 
-A full-stack CRM system for managing orders, products, customers, and categories — built with modern web technologies as a portfolio project.
+A full-stack CRM system for managing orders, products, customers, and categories — built with modern web technologies as a portfolio project. Features **real-time updates via WebSocket** and a **Redis caching layer** for high-performance reads.
 
 🌐 **Live Demo:** [https://crm-system-2026.vercel.app](https://crm-system-2026.vercel.app)
 
@@ -52,6 +53,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![React Query](https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=ReactQuery&logoColor=white)
 ![Zustand](https://img.shields.io/badge/Zustand-20232A?style=for-the-badge&logo=react&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io_Client-010101?style=for-the-badge&logo=socket.io&logoColor=white)
 
 ### ⚙️ Backend
 
@@ -62,6 +64,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 ![Resend](https://img.shields.io/badge/Resend-black?style=for-the-badge&logo=minutemailer&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io_Server-010101?style=for-the-badge&logo=socket.io&logoColor=white)
 
 ### ☁️ Infrastructure & Tools
 
@@ -77,17 +80,21 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 
 ## 🏗️ Architecture Diagram
 
-The system follows a modern decoupled architecture where the React frontend communicates with the NestJS REST API. A Redis cache layer (via Upstash) sits between the business logic and the database to minimize latency on hot read paths.
+The system follows a modern decoupled architecture. A Redis cache layer (Upstash) reduces database load on hot read paths, while a Socket.io WebSocket gateway pushes real-time events to all connected clients without polling.
 
 ```mermaid
 graph TD
     Client[Web Browser] -->|HTTPS / REST| CDN[Vercel CDN - Frontend]
     Client -->|HTTPS / REST| API[Render - NestJS Backend]
+    Client <-->|WebSocket / Socket.io| WS[Render - NestJS Backend]
 
     subgraph Frontend [React SPA]
         CDN --> ReactQuery[React Query Cache]
         ReactQuery --> Components[UI Components]
         Components --> Zustand[Global State]
+        Components --> useSocket[useSocket Hook]
+        useSocket --> useRealtime[useRealtime Hook]
+        useRealtime -->|invalidateQueries + toast| ReactQuery
     end
 
     subgraph Backend [NestJS Server]
@@ -98,6 +105,8 @@ graph TD
         Cache -->|Cache HIT| Services
         Cache -->|Cache MISS| Prisma[Prisma ORM]
         Services --> Prisma
+        Services -->|emit events| Gateway[EventsGateway]
+        Gateway -->|broadcast| WS
     end
 
     subgraph External Services
@@ -109,6 +118,140 @@ graph TD
     subgraph Database
         Prisma -->|TCP / Connection Pool| DB[(Neon Serverless PostgreSQL)]
     end
+```
+
+---
+
+## 🔴 WebSocket Real-Time
+
+The system uses **Socket.io** (via `@nestjs/websockets`) to push live events to every connected browser — no polling required.
+
+### Backend: `EventsGateway`
+
+A single `@Global()` `GatewayModule` registers the `EventsGateway` and exports it so any service can inject it and fire events.
+
+```typescript
+@WebSocketGateway({
+  cors: { origin: ['http://localhost:5173', process.env.FRONTEND_URL], credentials: true },
+})
+export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server!: Server;
+
+  emitOrderCreated(order: { id; orderCode; totalPrice; customerName }) {
+    this.server.emit('order:created', { ...order, timestamp: new Date().toISOString() });
+  }
+
+  emitOrderUpdated(order: { id; orderCode; status }) {
+    this.server.emit('order:updated', { ...order, timestamp: new Date().toISOString() });
+  }
+
+  emitDashboardUpdated(stats: { totalOrders; totalProducts; totalCustomers; revenue }) {
+    this.server.emit('dashboard:updated', { ...stats, timestamp: new Date().toISOString() });
+  }
+
+  emitNotification(message: string, type: 'success' | 'info' | 'warning') {
+    this.server.emit('notification', { message, type, timestamp: new Date().toISOString() });
+  }
+}
+```
+
+### Socket events reference
+
+| Event | Direction | Payload | Triggered by |
+|---|---|---|---|
+| `order:created` | Server → All clients | `{ id, orderCode, totalPrice, customerName, timestamp }` | `POST /api/orders` |
+| `order:updated` | Server → All clients | `{ id, orderCode, status, timestamp }` | `PATCH /api/orders/:id` (status change) |
+| `dashboard:updated` | Server → All clients | `{ totalOrders, totalProducts, totalCustomers, revenue, timestamp }` | Dashboard data change |
+| `notification` | Server → All clients | `{ message, type, timestamp }` | Any significant action |
+
+### Frontend: hooks
+
+The frontend exposes two composable hooks:
+
+**`useSocket`** — manages the singleton Socket.io connection with automatic reconnection:
+
+```typescript
+// src/hooks/useSocket.ts
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+
+export function useSocket() {
+  // connects with transports: ['websocket', 'polling']
+  // reconnectionAttempts: 5, reconnectionDelay: 1000ms
+  return { socket, connected };
+}
+```
+
+**`useRealtime`** — subscribes to all server events and reacts with React Query invalidations and toast notifications:
+
+```typescript
+// src/hooks/useRealtime.ts
+export function useRealtime() {
+  const { socket } = useSocket();
+  const queryClient = useQueryClient();
+
+  socket.on('order:created', (data) => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    toast.success(`🛒 New order: ${data.orderCode}`);
+  });
+
+  socket.on('order:updated', (data) => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    queryClient.invalidateQueries({ queryKey: ['order', String(data.id)] });
+    toast.info(`📦 Order ${data.orderCode}: ${data.status}`);
+  });
+
+  socket.on('dashboard:updated', () => queryClient.invalidateQueries({ queryKey: ['dashboard'] }));
+  socket.on('notification', (data) => toast[data.type](data.message));
+
+  return { connected };
+}
+```
+
+**`ConnectionStatus`** — a UI indicator component displayed in the header showing live/connecting state:
+
+```tsx
+// src/components/ConnectionStatus.tsx
+export default function ConnectionStatus() {
+  const { connected } = useRealtime();
+  return (
+    <div title={connected ? 'Real-time connected' : 'Connecting...'}>
+      <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+      <span>{connected ? 'Live' : 'Connecting...'}</span>
+    </div>
+  );
+}
+```
+
+### Real-time flow: creating an order
+
+```mermaid
+sequenceDiagram
+    participant ClientA as Browser A (Staff)
+    participant ClientB as Browser B (Admin)
+    participant API as NestJS REST API
+    participant GW as EventsGateway (Socket.io)
+    participant DB as Prisma / PostgreSQL
+    participant Cache as CacheService (Redis)
+
+    ClientA->>API: POST /api/orders { items, customerId }
+    API->>DB: BEGIN TRANSACTION
+    DB-->>API: Validate stock, insert order & items, decrement stock
+    API->>DB: COMMIT
+    DB-->>API: Order created ✅
+
+    API->>GW: emitOrderCreated({ orderCode, totalPrice, customerName })
+    API->>GW: emitNotification("New order created!", "success")
+    GW-->>ClientA: order:created event + notification
+    GW-->>ClientB: order:created event + notification
+
+    Note over ClientA,ClientB: Both browsers show toast & refresh orders/dashboard automatically
+
+    API->>Cache: del("dashboard:summary")
+    API->>Cache: delPattern("orders:*")
+    API->>Cache: delPattern("products:*")
+
+    API-->>ClientA: 201 Created (JSON)
 ```
 
 ---
@@ -134,24 +277,24 @@ static readonly TTL = {
 
 ### Cache operations
 
-| Method                        | Description                                                                                    |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| `get<T>(key)`                 | Read a value from Redis. Returns `null` on miss or error.                                      |
-| `set(key, value, ttl)`        | Write a value with a TTL using `SETEX`.                                                        |
-| `del(key)`                    | Invalidate a single cache key.                                                                 |
-| `delPattern(pattern)`         | Invalidate all keys matching a glob pattern (e.g. `orders:*`).                                 |
+| Method | Description |
+|---|---|
+| `get<T>(key)` | Read a value from Redis. Returns `null` on miss or error. |
+| `set(key, value, ttl)` | Write a value with a TTL using `SETEX`. |
+| `del(key)` | Invalidate a single cache key. |
+| `delPattern(pattern)` | Invalidate all keys matching a glob pattern (e.g. `orders:*`). |
 | `getOrSet(key, ttl, fetcher)` | Read-through helper: returns cached value or calls `fetcher()`, stores result, and returns it. |
 
 ### Cache strategy per module
 
-| Module         | Keys                                   | TTL    | Invalidated on                   |
-| -------------- | -------------------------------------- | ------ | -------------------------------- |
-| **Dashboard**  | `dashboard:summary`                    | 5 min  | Order create / update / delete   |
-| **Orders**     | `orders:list:*`, `orders:detail:*`     | 2 min  | Order create / update / delete   |
-| **Products**   | `products:list:*`, `products:detail:*` | 5 min  | Product create / update / delete |
-| **Categories** | `categories:all`, `categories:<id>`    | 30 min | Category / product mutation      |
+| Module | Keys | TTL | Invalidated on |
+|---|---|---|---|
+| **Dashboard** | `dashboard:summary` | 5 min | Order create / update / delete |
+| **Orders** | `orders:list:*`, `orders:detail:*` | 2 min | Order create / update / delete |
+| **Products** | `products:list:*`, `products:detail:*` | 5 min | Product create / update / delete |
+| **Categories** | `categories:all`, `categories:<id>` | 30 min | Category / product mutation |
 
-> **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching. No restart required.
+> **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching.
 
 ---
 
@@ -275,7 +418,7 @@ erDiagram
 
 ## 🔄 API Request Flow
 
-A typical flow for a cached read (e.g. listing orders):
+### Cached read (e.g. listing orders)
 
 ```mermaid
 sequenceDiagram
@@ -292,7 +435,7 @@ sequenceDiagram
     Service->>Cache: get("orders:list:...")
     alt Cache HIT
         Cache-->>Service: Cached JSON ✅
-        Service-->>Client: 200 OK (from cache)
+        Service-->>Client: 200 OK (from cache, ~5ms)
     else Cache MISS
         Cache-->>Service: null
         Service->>DB: SELECT orders ...
@@ -302,7 +445,7 @@ sequenceDiagram
     end
 ```
 
-A typical flow for creating an order (write path with cache invalidation):
+### Write path (create order → invalidate cache → emit WebSocket)
 
 ```mermaid
 sequenceDiagram
@@ -312,30 +455,26 @@ sequenceDiagram
     participant Service as OrdersService
     participant DB as Prisma (PostgreSQL)
     participant Cache as CacheService (Redis)
+    participant GW as EventsGateway
 
     Client->>Guard: POST /api/orders (JWT Token)
-    Guard-->>Client: 401 Unauthorized (If invalid)
-    Guard->>Controller: Token Valid (User Info Injected)
+    Guard->>Controller: Token Valid
     Controller->>Service: createOrder(dto, userId)
 
     Service->>DB: BEGIN TRANSACTION
-    DB-->>Service: Transaction Started
+    DB-->>Service: Validate stock, insert order & items
+    Service->>DB: COMMIT
+    DB-->>Service: Order ✅
 
-    Service->>DB: Verify Customer & Product Stock
-    DB-->>Service: Stock Available
-
-    Service->>DB: Insert Order & OrderItems
-    Service->>DB: Decrement Product Stock
-    Service->>DB: Insert OrderHistory (Audit Log)
-
-    Service->>DB: COMMIT TRANSACTION
-    DB-->>Service: Success
+    Service->>GW: emitOrderCreated(...)
+    Service->>GW: emitNotification("success")
+    GW-->>Client: order:created (WebSocket broadcast)
 
     Service->>Cache: del("dashboard:summary")
     Service->>Cache: delPattern("orders:*")
     Service->>Cache: delPattern("products:*")
 
-    Service-->>Controller: Return Order Data
+    Service-->>Controller: Return Order
     Controller-->>Client: 201 Created (JSON)
 ```
 
@@ -350,14 +489,19 @@ crm-system/
 │   ├── src/
 │   │   ├── assets/               # Static assets & icons
 │   │   ├── components/           # Reusable UI (shadcn/ui & custom)
+│   │   │   └── ConnectionStatus.tsx  # 🔴 Live WebSocket indicator
 │   │   ├── hooks/                # Custom React hooks
+│   │   │   ├── useSocket.ts      # 🔌 Socket.io connection manager
+│   │   │   ├── useRealtime.ts    # 📡 Event subscriptions & query invalidation
+│   │   │   └── useDebounce.ts    # Search debounce utility
 │   │   ├── layouts/              # App layouts (Sidebar, Header)
 │   │   ├── lib/                  # Utilities (Axios, formatting)
 │   │   ├── pages/                # Route components (Dashboard, Orders)
 │   │   ├── routes/               # Protected route definitions
 │   │   ├── services/             # API communication layer
 │   │   ├── store/                # Zustand global state (Auth)
-│   │   └── types/                # TypeScript interfaces
+│   │   ├── types/                # TypeScript interfaces
+│   │   └── utils/                # Helper utilities
 │   └── playwright.config.ts
 │
 └── backend/                      # NestJS application
@@ -376,6 +520,9 @@ crm-system/
     │   ├── decorators/           # Custom decorators (@CurrentUser, @Roles)
     │   ├── export/               # Excel & PDF generation logic
     │   ├── filters/              # Global exception handling
+    │   ├── gateway/              # 🔴 WebSocket real-time (Socket.io)
+    │   │   ├── gateway.module.ts #   Global @Module
+    │   │   └── events.gateway.ts #   emitOrderCreated / emitOrderUpdated / emitNotification
     │   ├── guards/               # AuthGuard & RolesGuard
     │   ├── mail/                 # Email delivery via Resend & templates
     │   ├── orders/               # Order & Inventory management API
@@ -412,6 +559,7 @@ docker-compose up --build
 
 - Frontend will be available at `http://localhost:5173`
 - Backend API will be available at `http://localhost:3000/api`
+- WebSocket server is on the same port as the API (`ws://localhost:3000`)
 
 ### 3. Manual Setup (Without Docker)
 
@@ -449,7 +597,9 @@ UPSTASH_REDIS_REST_URL="https://<your-db>.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="your_upstash_token"
 ```
 
-> **Note:** The `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` variables are **optional**. If they are not provided, the `CacheService` will log a warning and the application will operate normally without caching.
+> **Note:** `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are **optional**. If omitted, the `CacheService` logs a warning and the app runs normally without caching.
+>
+> **WebSocket** requires no extra configuration — it shares the same HTTP port as the REST API.
 
 **Run Database Migrations & Start Server:**
 
@@ -461,6 +611,7 @@ npm run start:dev
 
 - API is now running at `http://localhost:3000/api`
 - Swagger Documentation is at `http://localhost:3000/api/docs`
+- WebSocket is available at `ws://localhost:3000`
 
 #### Frontend Setup
 
@@ -478,6 +629,8 @@ cp .env.example .env
 VITE_API_URL="http://localhost:3000/api"
 ```
 
+> The WebSocket URL is derived automatically from `VITE_API_URL` by stripping `/api` — no extra variable needed.
+
 **Start the Development Server:**
 
 ```bash
@@ -494,9 +647,10 @@ We utilize continuous deployment mechanisms and GitHub Actions for rapid and saf
 
 - **CI/CD (GitHub Actions):** Automated workflows (`ci.yml`, `deploy.yml`) run on every push and pull request to ensure code quality (linting, tests) and trigger deployments.
 - **Frontend (Vercel):** Automatically builds and deploys the React SPA on every push to the `main` branch. Environment variables for production are managed in the Vercel dashboard.
-- **Backend (Render):** Connected to the GitHub repository. It builds the NestJS app (either via Docker or Node), runs Prisma database migrations during the build step, and deploys the web service.
+- **Backend (Render):** Connected to the GitHub repository. Builds the NestJS app, runs Prisma migrations during the build step, and serves both the REST API and the WebSocket server on the same port.
 - **Database (Neon.tech):** Serverless Postgres scales automatically and connects to the Render backend via secure connection pooling.
-- **Cache (Upstash):** Serverless Redis accessed over HTTPS REST API. No additional infrastructure needed — set two environment variables in Render and caching is enabled automatically.
+- **Cache (Upstash):** Serverless Redis accessed over HTTPS REST API. Set two environment variables in Render and caching is enabled automatically.
+- **WebSocket:** Served by the same NestJS process on Render — no additional infrastructure needed. Socket.io falls back to HTTP long-polling if WebSocket connections are restricted.
 
 ---
 
