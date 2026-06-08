@@ -12,6 +12,7 @@ import { ExportModule } from './export/export.module';
 import { UploadModule } from './upload/upload.module';
 import { MailModule } from './mail/mail.module';
 import { CacheModule } from './cache/cache.module';
+import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CacheModule } from './cache/cache.module';
     ExportModule,
     UploadModule,
     MailModule,
+    GatewayModule,
   ],
 })
 export class AppModule {}

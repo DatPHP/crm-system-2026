@@ -134,22 +134,22 @@ static readonly TTL = {
 
 ### Cache operations
 
-| Method | Description |
-|---|---|
-| `get<T>(key)` | Read a value from Redis. Returns `null` on miss or error. |
-| `set(key, value, ttl)` | Write a value with a TTL using `SETEX`. |
-| `del(key)` | Invalidate a single cache key. |
-| `delPattern(pattern)` | Invalidate all keys matching a glob pattern (e.g. `orders:*`). |
+| Method                        | Description                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `get<T>(key)`                 | Read a value from Redis. Returns `null` on miss or error.                                      |
+| `set(key, value, ttl)`        | Write a value with a TTL using `SETEX`.                                                        |
+| `del(key)`                    | Invalidate a single cache key.                                                                 |
+| `delPattern(pattern)`         | Invalidate all keys matching a glob pattern (e.g. `orders:*`).                                 |
 | `getOrSet(key, ttl, fetcher)` | Read-through helper: returns cached value or calls `fetcher()`, stores result, and returns it. |
 
 ### Cache strategy per module
 
-| Module | Keys | TTL | Invalidated on |
-|---|---|---|---|
-| **Dashboard** | `dashboard:summary` | 5 min | Order create / update / delete |
-| **Orders** | `orders:list:*`, `orders:detail:*` | 2 min | Order create / update / delete |
-| **Products** | `products:list:*`, `products:detail:*` | 5 min | Product create / update / delete |
-| **Categories** | `categories:all`, `categories:<id>` | 30 min | Category / product mutation |
+| Module         | Keys                                   | TTL    | Invalidated on                   |
+| -------------- | -------------------------------------- | ------ | -------------------------------- |
+| **Dashboard**  | `dashboard:summary`                    | 5 min  | Order create / update / delete   |
+| **Orders**     | `orders:list:*`, `orders:detail:*`     | 2 min  | Order create / update / delete   |
+| **Products**   | `products:list:*`, `products:detail:*` | 5 min  | Product create / update / delete |
+| **Categories** | `categories:all`, `categories:<id>`    | 30 min | Category / product mutation      |
 
 > **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching. No restart required.
 

@@ -10,6 +10,7 @@ import { paginate } from '../common/interfaces/paginated.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { MailService } from '../mail/mail.service';
 import { CacheService } from '../cache/cache.service';
+import { EventsGateway } from '../gateway/events.gateway';
 
 @Injectable()
 export class OrdersService {
@@ -17,6 +18,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private mailService: MailService,
     private cache: CacheService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   // Generate order code: ORD-20260516-001
@@ -188,6 +190,19 @@ export class OrdersService {
       return order;
     });
 
+    // Emit WebSocket event
+    this.eventsGateway.emitOrderCreated({
+      id: order.id,
+      orderCode: order.orderCode,
+      totalPrice: Number(order.totalPrice),
+      customerName: order.customer?.fullName || '',
+    });
+
+    this.eventsGateway.emitNotification(
+      `New order ${order.orderCode} created!`,
+      'success',
+    );
+
     // Gửi confirmation email (ngoài transaction)
     const fullOrder = await this.prisma.order.findUnique({
       where: { id: order.id },
@@ -250,6 +265,13 @@ export class OrdersService {
           description: `Status changed from ${order.status} to ${dto.status}`,
           createdById: userId,
         },
+      });
+
+      // Emit WebSocket event
+      this.eventsGateway.emitOrderUpdated({
+        id: id,
+        orderCode: order.orderCode,
+        status: dto.status,
       });
     }
 

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { CacheService } from '../cache/cache.service';
+import { EventsGateway } from '../gateway/events.gateway';
 
 // ─── MOCK DATA ────────────────────────────────────────
 const mockCustomer = {
@@ -67,11 +68,18 @@ const mockMailService = {
 };
 
 const mockCacheService = {
-  get:       jest.fn().mockResolvedValue(null),
-  set:       jest.fn().mockResolvedValue(undefined),
-  del:       jest.fn().mockResolvedValue(undefined),
-  delPattern:jest.fn().mockResolvedValue(undefined),
-  getOrSet:  jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(undefined),
+  del: jest.fn().mockResolvedValue(undefined),
+  delPattern: jest.fn().mockResolvedValue(undefined),
+  getOrSet: jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
+};
+
+const mockGateway = {
+  emitOrderCreated: jest.fn(),
+  emitOrderUpdated: jest.fn(),
+  emitDashboardUpdated: jest.fn(),
+  emitNotification: jest.fn(),
 };
 
 // ─── TEST SUITE ───────────────────────────────────────
@@ -85,6 +93,7 @@ describe('OrdersService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MailService, useValue: mockMailService },
         { provide: CacheService, useValue: mockCacheService },
+        { provide: EventsGateway, useValue: mockGateway },
       ],
     }).compile();
 
@@ -307,11 +316,14 @@ describe('OrdersService', () => {
   describe('update()', () => {
     it('should update order successfully', async () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.order.update.mockResolvedValue({ ...mockOrder, status: 'COMPLETED' });
+      mockPrismaService.order.update.mockResolvedValue({
+        ...mockOrder,
+        status: 'COMPLETED',
+      });
 
       const dto = { status: 'COMPLETED' as const };
       const result = await service.update(1, dto, 1);
-      
+
       expect(result.status).toBe('COMPLETED');
       expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
@@ -319,7 +331,9 @@ describe('OrdersService', () => {
 
     it('should throw NotFoundException if order not found', async () => {
       mockPrismaService.order.findUnique.mockResolvedValue(null);
-      await expect(service.update(999, {}, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, {}, 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

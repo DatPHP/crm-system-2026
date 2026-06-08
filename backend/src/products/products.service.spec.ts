@@ -28,11 +28,11 @@ const mockPrismaService = {
 
 // Thêm mock CacheService
 const mockCacheService = {
-  get:       jest.fn().mockResolvedValue(null),
-  set:       jest.fn().mockResolvedValue(undefined),
-  del:       jest.fn().mockResolvedValue(undefined),
-  delPattern:jest.fn().mockResolvedValue(undefined),
-  getOrSet:  jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(undefined),
+  del: jest.fn().mockResolvedValue(undefined),
+  delPattern: jest.fn().mockResolvedValue(undefined),
+  getOrSet: jest.fn().mockImplementation((_key, _ttl, fetcher) => fetcher()),
 };
 
 describe('ProductsService', () => {
@@ -119,10 +119,12 @@ describe('ProductsService', () => {
 
       const result = await service.create(createDto);
       expect(result.sku).toBe('IP15-001');
-      
+
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
       expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
-      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${createDto.categoryId}`);
+      expect(mockCacheService.del).toHaveBeenCalledWith(
+        `categories:${createDto.categoryId}`,
+      );
     });
 
     it('should throw ConflictException if SKU exists', async () => {
@@ -144,7 +146,9 @@ describe('ProductsService', () => {
 
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
       expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
-      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${mockProduct.categoryId}`);
+      expect(mockCacheService.del).toHaveBeenCalledWith(
+        `categories:${mockProduct.categoryId}`,
+      );
     });
 
     it('should throw NotFoundException if not found', async () => {
@@ -165,7 +169,9 @@ describe('ProductsService', () => {
 
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
       expect(mockCacheService.del).toHaveBeenCalledWith('categories:all');
-      expect(mockCacheService.del).toHaveBeenCalledWith(`categories:${mockProduct.categoryId}`);
+      expect(mockCacheService.del).toHaveBeenCalledWith(
+        `categories:${mockProduct.categoryId}`,
+      );
     });
 
     it('should throw NotFoundException if product not found', async () => {
