@@ -15,6 +15,7 @@ import CreateOrderPage from "./pages/CreateOrderPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/create" element={<CreateOrderPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
