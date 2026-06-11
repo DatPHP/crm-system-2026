@@ -8,7 +8,7 @@ export default function CRMLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
       {/* Mobile overlay */}
       {mobileSidebarOpen && (
         <div

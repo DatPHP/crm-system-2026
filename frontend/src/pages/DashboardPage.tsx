@@ -54,15 +54,17 @@ export default function DashboardPage() {
         {cards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-xl p-5 border shadow-sm flex items-center gap-4"
+            className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-4"
           >
             <div className={`${card.color} p-3 rounded-lg text-white`}>
               <card.icon size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">{card.label}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {card.label}
+              </p>
               <p
-                className="text-2xl font-bold truncate"
+                className="text-2xl font-bold text-gray-900 dark:text-white truncate"
                 title={String(card.value)}
               >
                 {card.value}
@@ -74,11 +76,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
           <h2 className="text-lg font-semibold mb-4">Recent Orders</h2>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500 border-b">
+              <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
                 <th className="pb-2">Order Code</th>
                 <th className="pb-2">Customer</th>
                 <th className="pb-2">Total</th>
@@ -87,7 +89,10 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {data.recentOrders.map((order: any) => (
-                <tr key={order.id} className="border-b last:border-0">
+                <tr
+                  key={order.id}
+                  className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                >
                   <td className="py-2 font-mono text-xs">{order.orderCode}</td>
                   <td className="py-2">{order.customer.fullName}</td>
                   <td className="py-2">
@@ -107,7 +112,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Orders by Status */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
           <h2 className="text-lg font-semibold mb-4">Orders by Status</h2>
           <div className="space-y-3">
             {data.ordersByStatus.map((item: any) => (

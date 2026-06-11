@@ -132,37 +132,60 @@ A single `@Global()` `GatewayModule` registers the `EventsGateway` and exports i
 
 ```typescript
 @WebSocketGateway({
-  cors: { origin: ['http://localhost:5173', process.env.FRONTEND_URL], credentials: true },
+  cors: {
+    origin: ["http://localhost:5173", process.env.FRONTEND_URL],
+    credentials: true,
+  },
 })
-export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class EventsGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server!: Server;
 
   emitOrderCreated(order: { id; orderCode; totalPrice; customerName }) {
-    this.server.emit('order:created', { ...order, timestamp: new Date().toISOString() });
+    this.server.emit("order:created", {
+      ...order,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   emitOrderUpdated(order: { id; orderCode; status }) {
-    this.server.emit('order:updated', { ...order, timestamp: new Date().toISOString() });
+    this.server.emit("order:updated", {
+      ...order,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  emitDashboardUpdated(stats: { totalOrders; totalProducts; totalCustomers; revenue }) {
-    this.server.emit('dashboard:updated', { ...stats, timestamp: new Date().toISOString() });
+  emitDashboardUpdated(stats: {
+    totalOrders;
+    totalProducts;
+    totalCustomers;
+    revenue;
+  }) {
+    this.server.emit("dashboard:updated", {
+      ...stats,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  emitNotification(message: string, type: 'success' | 'info' | 'warning') {
-    this.server.emit('notification', { message, type, timestamp: new Date().toISOString() });
+  emitNotification(message: string, type: "success" | "info" | "warning") {
+    this.server.emit("notification", {
+      message,
+      type,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 ```
 
 ### Socket events reference
 
-| Event | Direction | Payload | Triggered by |
-|---|---|---|---|
-| `order:created` | Server → All clients | `{ id, orderCode, totalPrice, customerName, timestamp }` | `POST /api/orders` |
-| `order:updated` | Server → All clients | `{ id, orderCode, status, timestamp }` | `PATCH /api/orders/:id` (status change) |
-| `dashboard:updated` | Server → All clients | `{ totalOrders, totalProducts, totalCustomers, revenue, timestamp }` | Dashboard data change |
-| `notification` | Server → All clients | `{ message, type, timestamp }` | Any significant action |
+| Event               | Direction            | Payload                                                              | Triggered by                            |
+| ------------------- | -------------------- | -------------------------------------------------------------------- | --------------------------------------- |
+| `order:created`     | Server → All clients | `{ id, orderCode, totalPrice, customerName, timestamp }`             | `POST /api/orders`                      |
+| `order:updated`     | Server → All clients | `{ id, orderCode, status, timestamp }`                               | `PATCH /api/orders/:id` (status change) |
+| `dashboard:updated` | Server → All clients | `{ totalOrders, totalProducts, totalCustomers, revenue, timestamp }` | Dashboard data change                   |
+| `notification`      | Server → All clients | `{ message, type, timestamp }`                                       | Any significant action                  |
 
 ### Frontend: hooks
 
@@ -172,7 +195,8 @@ The frontend exposes two composable hooks:
 
 ```typescript
 // src/hooks/useSocket.ts
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+const SOCKET_URL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
 
 export function useSocket() {
   // connects with transports: ['websocket', 'polling']
@@ -189,20 +213,22 @@ export function useRealtime() {
   const { socket } = useSocket();
   const queryClient = useQueryClient();
 
-  socket.on('order:created', (data) => {
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+  socket.on("order:created", (data) => {
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     toast.success(`🛒 New order: ${data.orderCode}`);
   });
 
-  socket.on('order:updated', (data) => {
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
-    queryClient.invalidateQueries({ queryKey: ['order', String(data.id)] });
+  socket.on("order:updated", (data) => {
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["order", String(data.id)] });
     toast.info(`📦 Order ${data.orderCode}: ${data.status}`);
   });
 
-  socket.on('dashboard:updated', () => queryClient.invalidateQueries({ queryKey: ['dashboard'] }));
-  socket.on('notification', (data) => toast[data.type](data.message));
+  socket.on("dashboard:updated", () =>
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+  );
+  socket.on("notification", (data) => toast[data.type](data.message));
 
   return { connected };
 }
@@ -215,9 +241,11 @@ export function useRealtime() {
 export default function ConnectionStatus() {
   const { connected } = useRealtime();
   return (
-    <div title={connected ? 'Real-time connected' : 'Connecting...'}>
-      <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-      <span>{connected ? 'Live' : 'Connecting...'}</span>
+    <div title={connected ? "Real-time connected" : "Connecting..."}>
+      <div
+        className={`w-2 h-2 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+      />
+      <span>{connected ? "Live" : "Connecting..."}</span>
     </div>
   );
 }
@@ -277,22 +305,22 @@ static readonly TTL = {
 
 ### Cache operations
 
-| Method | Description |
-|---|---|
-| `get<T>(key)` | Read a value from Redis. Returns `null` on miss or error. |
-| `set(key, value, ttl)` | Write a value with a TTL using `SETEX`. |
-| `del(key)` | Invalidate a single cache key. |
-| `delPattern(pattern)` | Invalidate all keys matching a glob pattern (e.g. `orders:*`). |
+| Method                        | Description                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `get<T>(key)`                 | Read a value from Redis. Returns `null` on miss or error.                                      |
+| `set(key, value, ttl)`        | Write a value with a TTL using `SETEX`.                                                        |
+| `del(key)`                    | Invalidate a single cache key.                                                                 |
+| `delPattern(pattern)`         | Invalidate all keys matching a glob pattern (e.g. `orders:*`).                                 |
 | `getOrSet(key, ttl, fetcher)` | Read-through helper: returns cached value or calls `fetcher()`, stores result, and returns it. |
 
 ### Cache strategy per module
 
-| Module | Keys | TTL | Invalidated on |
-|---|---|---|---|
-| **Dashboard** | `dashboard:summary` | 5 min | Order create / update / delete |
-| **Orders** | `orders:list:*`, `orders:detail:*` | 2 min | Order create / update / delete |
-| **Products** | `products:list:*`, `products:detail:*` | 5 min | Product create / update / delete |
-| **Categories** | `categories:all`, `categories:<id>` | 30 min | Category / product mutation |
+| Module         | Keys                                   | TTL    | Invalidated on                   |
+| -------------- | -------------------------------------- | ------ | -------------------------------- |
+| **Dashboard**  | `dashboard:summary`                    | 5 min  | Order create / update / delete   |
+| **Orders**     | `orders:list:*`, `orders:detail:*`     | 2 min  | Order create / update / delete   |
+| **Products**   | `products:list:*`, `products:detail:*` | 5 min  | Product create / update / delete |
+| **Categories** | `categories:all`, `categories:<id>`    | 30 min | Category / product mutation      |
 
 > **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching.
 

@@ -22,24 +22,28 @@ export default function DataTable<T extends { id: number }>({
   isLoading,
 }: Props<T>) {
   if (isLoading) {
-    return <div className="text-center py-10 text-gray-400">Loading...</div>;
+    return (
+      <div className="text-center py-10 text-gray-400 dark:text-gray-500">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-white w-full">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 w-full">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b">
+        <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           <tr>
             {columns.map((col) => (
               <th
                 key={String(col.key)}
-                className="px-4 py-3 text-left font-semibold text-gray-600"
+                className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300"
               >
                 {col.label}
               </th>
             ))}
             {(onEdit || onDelete) && (
-              <th className="px-4 py-3 text-left font-semibold text-gray-600">
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
                 Actions
               </th>
             )}
@@ -50,7 +54,7 @@ export default function DataTable<T extends { id: number }>({
             <tr>
               <td
                 colSpan={columns.length + 1}
-                className="text-center py-10 text-gray-400"
+                className="text-center py-10 text-gray-400 dark:text-gray-500"
               >
                 No data found
               </td>
@@ -59,7 +63,7 @@ export default function DataTable<T extends { id: number }>({
             data.map((row) => (
               <tr
                 key={row.id}
-                className="border-b hover:bg-gray-50 transition-colors"
+                className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 {columns.map((col) => (
                   <td key={String(col.key)} className="px-4 py-3">
@@ -74,7 +78,7 @@ export default function DataTable<T extends { id: number }>({
                       {onEdit && (
                         <button
                           onClick={() => onEdit(row)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-600 rounded"
                         >
                           <Pencil size={16} />
                         </button>

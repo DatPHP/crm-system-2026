@@ -18,12 +18,15 @@ const menuItems = [
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
   return (
     <aside
-      className={`bg-gray-900 text-white transition-all duration-300 ${
-        isOpen ? "w-64" : "w-16"
-      }`}
+      className={`
+      bg-gray-900 dark:bg-gray-950
+      text-white transition-all duration-300
+      flex flex-col
+      ${isOpen ? "w-64" : "w-16"}
+    `}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-center border-b border-gray-700">
+      <div className="h-16 flex items-center justify-center border-b border-gray-700 dark:border-gray-800">
         {isOpen ? (
           <span className="text-xl font-bold text-blue-400">CRM System</span>
         ) : (
@@ -32,18 +35,19 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
       </div>
 
       {/* Menu */}
-      <nav className="mt-4">
+      <nav className="mt-4 flex-1">
         {menuItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors ${
-                isActive ? "bg-blue-600 hover:bg-blue-700" : ""
-              }`
-            }
+            className={({ isActive }) => `
+              flex items-center gap-3 px-4 py-3
+              hover:bg-gray-700 dark:hover:bg-gray-800
+              transition-colors duration-150
+              ${isActive ? "bg-blue-600 hover:bg-blue-700" : ""}
+            `}
           >
-            <item.icon size={20} />
+            <item.icon size={20} className="shrink-0" />
             {isOpen && (
               <span className="text-sm font-medium">{item.label}</span>
             )}

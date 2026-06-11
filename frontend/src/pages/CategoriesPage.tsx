@@ -116,7 +116,7 @@ export default function CategoriesPage() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white p-6 rounded-xl border mb-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
           <h2 className="text-lg font-semibold mb-4">
             {editing ? "Edit Category" : "New Category"}
           </h2>
@@ -125,28 +125,32 @@ export default function CategoriesPage() {
             className="grid grid-cols-2 gap-4"
           >
             <div>
-              <label className="block text-sm font-medium mb-1">Name *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name *
+              </label>
               <input
                 {...register("name")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Slug</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Slug
+              </label>
               <input
                 {...register("slug")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder="auto-generated"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description
               </label>
               <textarea
                 {...register("description")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 rows={2}
               />
             </div>

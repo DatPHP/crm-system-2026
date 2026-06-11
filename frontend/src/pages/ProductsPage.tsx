@@ -193,7 +193,7 @@ export default function ProductsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-xl border mb-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
           <h2 className="text-lg font-semibold mb-4">
             {editing ? "Edit Product" : "New Product"}
           </h2>
@@ -202,47 +202,55 @@ export default function ProductsPage() {
             className="grid grid-cols-2 gap-4"
           >
             <div>
-              <label className="block text-sm font-medium mb-1">Title *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Title *
+              </label>
               <input
                 {...register("title")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">SKU *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                SKU *
+              </label>
               <input
                 {...register("sku")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Price *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Price *
+              </label>
               <input
                 {...register("price")}
                 type="number"
                 step="0.01"
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Stock *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Stock *
+              </label>
               <input
                 {...register("stockQuantity")}
                 type="number"
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Category *
               </label>
               <select
                 {...register("categoryId")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 required
               >
                 <option value="">-- Select --</option>
@@ -254,16 +262,16 @@ export default function ProductsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description
               </label>
               <input
                 {...register("description")}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Product Image
               </label>
               <div className="flex items-center gap-3">

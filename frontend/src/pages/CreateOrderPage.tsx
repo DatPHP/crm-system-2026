@@ -149,7 +149,7 @@ export default function CreateOrderPage() {
             <select
               value={customerId ?? ""}
               onChange={(e) => setCustomerId(parseInt(e.target.value))}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">-- Select customer --</option>
               {customers.map((c: any) => (
@@ -167,7 +167,7 @@ export default function CreateOrderPage() {
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2"
+                className="flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">-- Select product --</option>
                 {availableProducts.map((p: any) => (
