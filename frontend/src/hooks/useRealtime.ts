@@ -14,6 +14,7 @@ export function useRealtime() {
     socket.on("order:created", (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }); // ← thêm
       toast.success(`🛒 New order: ${data.orderCode}`, {
         description: `$${Number(data.totalPrice).toLocaleString()} — ${data.customerName}`,
         duration: 5000,
@@ -25,6 +26,7 @@ export function useRealtime() {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["order", String(data.id)] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }); // ← thêm
       toast.info(`📦 Order ${data.orderCode}: ${data.status}`, {
         duration: 4000,
       });

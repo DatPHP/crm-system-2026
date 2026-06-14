@@ -7,6 +7,7 @@ import { useState } from "react";
 import ConnectionStatus from "./ConnectionStatus";
 import ThemeToggle from "./ThemeToggle";
 import { userService } from "../services/user.service";
+import NotificationBell from "./NotificationBell";
 
 export default function Header({
   onToggleSidebar,
@@ -54,6 +55,7 @@ export default function Header({
       <div className="flex items-center gap-2">
         <ConnectionStatus />
         <ThemeToggle />
+        <NotificationBell />
 
         <div className="relative">
           <button

@@ -29,6 +29,7 @@ model User {
   orderHistories OrderHistory[] @relation("HistoryByUser")
   refreshTokens  RefreshToken[]
   passwordResetToken PasswordResetToken?
+  notifications   Notification[]
 
   @@map("users")
 }
@@ -177,4 +178,19 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@map("password_reset_tokens")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String   // order_created, order_paid, order_completed, order_cancelled
+  isRead    Boolean  @default(false)
+  metadata  Json?    // { orderId, orderCode, ... }
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }

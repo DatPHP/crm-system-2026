@@ -11,6 +11,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { MailService } from '../mail/mail.service';
 import { CacheService } from '../cache/cache.service';
 import { EventsGateway } from '../gateway/events.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrdersService {
@@ -19,6 +20,7 @@ export class OrdersService {
     private mailService: MailService,
     private cache: CacheService,
     private eventsGateway: EventsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   // Generate order code: ORD-20260516-001
@@ -203,6 +205,17 @@ export class OrdersService {
       'success',
     );
 
+    // Tạo notification cho tất cả admins
+    await this.notificationsService.createForAllAdmins({
+      title: '🛒 New Order Received',
+      message: `Order ${order.orderCode} from ${order.customer?.fullName} — $${Number(order.totalPrice).toLocaleString()}`,
+      type: 'order_created',
+      metadata: {
+        orderId: order.id,
+        orderCode: order.orderCode,
+      },
+    });
+
     // Gửi confirmation email (ngoài transaction)
     const fullOrder = await this.prisma.order.findUnique({
       where: { id: order.id },
@@ -272,6 +285,26 @@ export class OrdersService {
         id: id,
         orderCode: order.orderCode,
         status: dto.status,
+      });
+    }
+
+    if (dto.status && dto.status !== order.status) {
+      const statusMessages: Record<string, string> = {
+        PAID: '💳 Order payment confirmed',
+        COMPLETED: '✅ Order completed successfully',
+        CANCELLED: '❌ Order has been cancelled',
+      };
+
+      await this.notificationsService.createForAllAdmins({
+        title: `Order ${order.orderCode} — ${dto.status}`,
+        message:
+          statusMessages[dto.status] || `Status changed to ${dto.status}`,
+        type: `order_${dto.status.toLowerCase()}`,
+        metadata: {
+          orderId: id,
+          orderCode: order.orderCode,
+          status: dto.status,
+        },
       });
     }
 

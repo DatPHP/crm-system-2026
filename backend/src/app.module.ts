@@ -13,6 +13,7 @@ import { UploadModule } from './upload/upload.module';
 import { MailModule } from './mail/mail.module';
 import { CacheModule } from './cache/cache.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { GatewayModule } from './gateway/gateway.module';
     UploadModule,
     MailModule,
     GatewayModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
