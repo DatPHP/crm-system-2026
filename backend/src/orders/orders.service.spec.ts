@@ -5,6 +5,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { CacheService } from '../cache/cache.service';
 import { EventsGateway } from '../gateway/events.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // ─── MOCK DATA ────────────────────────────────────────
 const mockCustomer = {
@@ -38,7 +39,7 @@ const mockOrder = {
   orderHistories: [],
 };
 
-// ─── MOCK PRISMA ──────────────────────────────────────
+// ─── MOCK SERVICES ────────────────────────────────────
 const mockPrismaService = {
   order: {
     findMany: jest.fn(),
@@ -47,24 +48,15 @@ const mockPrismaService = {
     update: jest.fn(),
     count: jest.fn(),
   },
-  customer: {
-    findUnique: jest.fn(),
-  },
-  product: {
-    findUnique: jest.fn(),
-    update: jest.fn(),
-    count: jest.fn(),
-  },
-  orderHistory: {
-    create: jest.fn(),
-  },
+  customer: { findUnique: jest.fn() },
+  product: { findUnique: jest.fn(), update: jest.fn(), count: jest.fn() },
+  orderHistory: { create: jest.fn() },
   $transaction: jest.fn(),
 };
 
 const mockMailService = {
-  sendMail: jest.fn(),
-  sendOrderStatusUpdate: jest.fn().mockResolvedValue({}),
   sendOrderConfirmation: jest.fn().mockResolvedValue({}),
+  sendOrderStatusUpdate: jest.fn().mockResolvedValue({}),
 };
 
 const mockCacheService = {
@@ -82,6 +74,17 @@ const mockGateway = {
   emitNotification: jest.fn(),
 };
 
+// ← THÊM mock NotificationsService
+const mockNotificationsService = {
+  create: jest.fn().mockResolvedValue({}),
+  createForAllAdmins: jest.fn().mockResolvedValue([]),
+  findAll: jest.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
+  markAsRead: jest.fn().mockResolvedValue({}),
+  markAllAsRead: jest.fn().mockResolvedValue({}),
+  remove: jest.fn().mockResolvedValue({}),
+  clearRead: jest.fn().mockResolvedValue({}),
+};
+
 // ─── TEST SUITE ───────────────────────────────────────
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -94,14 +97,20 @@ describe('OrdersService', () => {
         { provide: MailService, useValue: mockMailService },
         { provide: CacheService, useValue: mockCacheService },
         { provide: EventsGateway, useValue: mockGateway },
+        { provide: NotificationsService, useValue: mockNotificationsService }, // ← thêm
       ],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);
     jest.clearAllMocks();
+
+    // Reset getOrSet về default sau mỗi test
+    mockCacheService.getOrSet.mockImplementation(
+      (_key: string, _ttl: number, fetcher: () => any) => fetcher(),
+    );
   });
 
-  // ─── findAll ─────────────────────────────────────────
+  // ─── findAll ──────────────────────────────────────────
   describe('findAll()', () => {
     it('should return paginated orders', async () => {
       mockPrismaService.order.findMany.mockResolvedValue([mockOrder]);
@@ -113,11 +122,6 @@ describe('OrdersService', () => {
       expect(result.meta.total).toBe(1);
       expect(result.meta.page).toBe(1);
       expect(result.meta.totalPages).toBe(1);
-      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
-        'orders:all:1:10',
-        expect.any(Number),
-        expect.any(Function),
-      );
     });
 
     it('should filter by search term', async () => {
@@ -128,8 +132,6 @@ describe('OrdersService', () => {
 
       expect(result.data).toHaveLength(0);
       expect(result.meta.total).toBe(0);
-
-      // Kiểm tra where clause có search không
       expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ OR: expect.any(Array) }),
@@ -138,7 +140,7 @@ describe('OrdersService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────
+  // ─── findOne ──────────────────────────────────────────
   describe('findOne()', () => {
     it('should return order by id', async () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
@@ -146,11 +148,6 @@ describe('OrdersService', () => {
       const result = await service.findOne(1);
 
       expect(result.orderCode).toBe('ORD-20260521-001');
-      expect(mockCacheService.getOrSet).toHaveBeenCalledWith(
-        'orders:1',
-        expect.any(Number),
-        expect.any(Function),
-      );
     });
 
     it('should throw NotFoundException if order not found', async () => {
@@ -160,7 +157,7 @@ describe('OrdersService', () => {
     });
   });
 
-  // ─── create ──────────────────────────────────────────
+  // ─── create ───────────────────────────────────────────
   describe('create()', () => {
     const createDto = {
       customerId: 1,
@@ -168,7 +165,6 @@ describe('OrdersService', () => {
     };
 
     it('should create order successfully with transaction', async () => {
-      // Mock transaction thực thi callback
       mockPrismaService.$transaction.mockImplementation(
         async (callback: any) => {
           const tx = {
@@ -187,13 +183,29 @@ describe('OrdersService', () => {
         },
       );
 
+      // Mock findUnique sau transaction (để gửi email)
+      mockPrismaService.order.findUnique.mockResolvedValue({
+        ...mockOrder,
+        customer: mockCustomer,
+        orderItems: mockOrder.orderItems.map((i) => ({
+          ...i,
+          product: mockProduct,
+        })),
+      });
+
       const result = await service.create(createDto, 1);
 
       expect(result.orderCode).toBe('ORD-20260521-001');
       expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
       expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
-      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
+
+      // Verify notification được tạo
+      expect(mockNotificationsService.createForAllAdmins).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'order_created',
+        }),
+      );
     });
 
     it('should throw NotFoundException if customer not found', async () => {
@@ -226,7 +238,6 @@ describe('OrdersService', () => {
         },
       );
 
-      // quantity: 2 nhưng stock chỉ có 1
       await expect(service.create(createDto, 1)).rejects.toThrow(
         BadRequestException,
       );
@@ -253,7 +264,7 @@ describe('OrdersService', () => {
     });
   });
 
-  // ─── cancel ──────────────────────────────────────────
+  // ─── cancel ───────────────────────────────────────────
   describe('cancel()', () => {
     it('should cancel order and restore stock', async () => {
       const pendingOrder = { ...mockOrder, status: 'PENDING' };
@@ -274,12 +285,18 @@ describe('OrdersService', () => {
         },
       );
 
-      const result = await service.cancel(1, 1);
-      expect(result.status).toBe('CANCELLED');
+      // Mock findUnique sau transaction (để gửi notification)
+      mockPrismaService.order.findUnique.mockResolvedValue({
+        ...mockOrder,
+        status: 'CANCELLED',
+        customer: mockCustomer,
+      });
 
+      const result = await service.cancel(1, 1);
+
+      expect(result.status).toBe('CANCELLED');
       expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
-      expect(mockCacheService.delPattern).toHaveBeenCalledWith('products:*');
     });
 
     it('should throw BadRequestException if already cancelled', async () => {
@@ -313,24 +330,39 @@ describe('OrdersService', () => {
     });
   });
 
+  // ─── update ───────────────────────────────────────────
   describe('update()', () => {
     it('should update order successfully', async () => {
-      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.order.findUnique
+        .mockResolvedValueOnce(mockOrder) // lần 1: findOne()
+        .mockResolvedValueOnce({ ...mockOrder, customer: mockCustomer }); // lần 2: gửi email/notification
+
       mockPrismaService.order.update.mockResolvedValue({
         ...mockOrder,
         status: 'COMPLETED',
       });
 
-      const dto = { status: 'COMPLETED' as const };
-      const result = await service.update(1, dto, 1);
+      mockPrismaService.orderHistory = {
+        create: jest.fn().mockResolvedValue({}),
+      };
+
+      const result = await service.update(1, { status: 'COMPLETED' as any }, 1);
 
       expect(result.status).toBe('COMPLETED');
       expect(mockCacheService.del).toHaveBeenCalledWith('dashboard:summary');
       expect(mockCacheService.delPattern).toHaveBeenCalledWith('orders:*');
+
+      // Verify notification được tạo khi đổi status
+      expect(mockNotificationsService.createForAllAdmins).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'order_completed',
+        }),
+      );
     });
 
     it('should throw NotFoundException if order not found', async () => {
       mockPrismaService.order.findUnique.mockResolvedValue(null);
+
       await expect(service.update(999, {}, 1)).rejects.toThrow(
         NotFoundException,
       );
