@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import api from "../lib/axios";
 
 interface User {
@@ -18,38 +19,48 @@ interface AuthState {
   isAuthenticated: () => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken:
-    localStorage.getItem("accessToken") || localStorage.getItem("token"),
-  refreshToken: localStorage.getItem("refreshToken"),
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
 
-  setAuth: (user, accessToken, refreshToken) => {
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-    // Xóa key cũ nếu còn
-    localStorage.removeItem("token");
-    set({ user, accessToken, refreshToken });
-  },
+      setAuth: (user, accessToken, refreshToken) => {
+        // Vẫn giữ localStorage riêng cho axios interceptor đọc trực tiếp
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.removeItem("token");
+        set({ user, accessToken, refreshToken });
+      },
 
-  logout: async () => {
-    const refreshToken = get().refreshToken;
-    if (refreshToken) {
-      try {
-        await api.post("/auth/logout", { refreshToken });
-      } catch {}
+      logout: async () => {
+        const refreshToken = get().refreshToken;
+        if (refreshToken) {
+          try {
+            await api.post("/auth/logout", { refreshToken });
+          } catch {}
+        }
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("token");
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
+
+      isAuthenticated: () => {
+        const storeToken = get().accessToken;
+        const localToken =
+          localStorage.getItem("accessToken") || localStorage.getItem("token");
+        return !!(storeToken || localToken);
+      },
+    }),
+    {
+      name: "auth-storage", // key trong localStorage
+      partialize: (state) => ({
+        user:         state.user,
+        accessToken:  state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
     }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("token");
-    set({ user: null, accessToken: null, refreshToken: null });
-  },
-
-  isAuthenticated: () => {
-    // Check cả store state lẫn localStorage (cho trường hợp page reload)
-    const storeToken = get().accessToken;
-    const localToken =
-      localStorage.getItem("accessToken") || localStorage.getItem("token");
-    return !!(storeToken || localToken);
-  },
-}));
+  )
+);
