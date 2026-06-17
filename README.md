@@ -55,23 +55,23 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Zustand](https://img.shields.io/badge/Zustand_v5-20232A?style=for-the-badge&logo=react&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io_Client-010101?style=for-the-badge&logo=socket.io&logoColor=white)
 
-| Library | Version | Purpose |
-|---|---|---|
-| React | 19 | UI framework |
-| TypeScript | 6 | Type safety |
-| Vite | 8 | Build tool & dev server |
-| TailwindCSS | 3 | Utility-first CSS |
-| React Query (`@tanstack/react-query`) | 5 | Server-state, caching, mutations |
-| Zustand | 5 | Global client-state (auth + theme) |
-| Socket.io Client | 4.8 | WebSocket real-time connection |
-| React Router DOM | 7 | Client-side routing |
-| React Hook Form + Zod | 7 / 4 | Form management & validation |
-| shadcn/ui + Radix UI | 4 | Accessible component primitives |
-| Sonner | 2 | Toast notifications |
-| Lucide React | 1.16 | Icon library |
-| Geist Variable Font | – | Typography |
-| Axios | 1 | HTTP client |
-| Playwright | 1.60 | End-to-end testing |
+| Library                               | Version | Purpose                            |
+| ------------------------------------- | ------- | ---------------------------------- |
+| React                                 | 19      | UI framework                       |
+| TypeScript                            | 6       | Type safety                        |
+| Vite                                  | 8       | Build tool & dev server            |
+| TailwindCSS                           | 3       | Utility-first CSS                  |
+| React Query (`@tanstack/react-query`) | 5       | Server-state, caching, mutations   |
+| Zustand                               | 5       | Global client-state (auth + theme) |
+| Socket.io Client                      | 4.8     | WebSocket real-time connection     |
+| React Router DOM                      | 7       | Client-side routing                |
+| React Hook Form + Zod                 | 7 / 4   | Form management & validation       |
+| shadcn/ui + Radix UI                  | 4       | Accessible component primitives    |
+| Sonner                                | 2       | Toast notifications                |
+| Lucide React                          | 1.16    | Icon library                       |
+| Geist Variable Font                   | –       | Typography                         |
+| Axios                                 | 1       | HTTP client                        |
+| Playwright                            | 1.60    | End-to-end testing                 |
 
 ### ⚙️ Backend
 
@@ -84,22 +84,22 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io_Server-010101?style=for-the-badge&logo=socket.io&logoColor=white)
 
-| Library | Version | Purpose |
-|---|---|---|
-| NestJS | 11 | Backend framework |
-| Prisma ORM | 6 | Database ORM & migrations |
-| PostgreSQL (Neon) | – | Primary database |
-| JWT / Passport | 11 | Authentication & refresh tokens |
-| `@nestjs/websockets` + Socket.io | 11 | WebSocket gateway |
-| `@upstash/redis` | 1.38 | Serverless Redis cache client |
-| Resend | 6 | Transactional email delivery |
-| Cloudinary | 2 | Image upload & transformation |
-| Swagger / OpenAPI | 11 | Interactive API documentation |
-| ExcelJS / PDFKit | 4 / 0.18 | Export reports |
-| bcrypt | 6 | Password hashing |
-| Helmet | 8 | HTTP security headers |
-| `@nestjs/throttler` | 6 | Rate limiting |
-| Jest | 30 | Unit & E2E testing |
+| Library                          | Version  | Purpose                         |
+| -------------------------------- | -------- | ------------------------------- |
+| NestJS                           | 11       | Backend framework               |
+| Prisma ORM                       | 6        | Database ORM & migrations       |
+| PostgreSQL (Neon)                | –        | Primary database                |
+| JWT / Passport                   | 11       | Authentication & refresh tokens |
+| `@nestjs/websockets` + Socket.io | 11       | WebSocket gateway               |
+| `@upstash/redis`                 | 1.38     | Serverless Redis cache client   |
+| Resend                           | 6        | Transactional email delivery    |
+| Cloudinary                       | 2        | Image upload & transformation   |
+| Swagger / OpenAPI                | 11       | Interactive API documentation   |
+| ExcelJS / PDFKit                 | 4 / 0.18 | Export reports                  |
+| bcrypt                           | 6        | Password hashing                |
+| Helmet                           | 8        | HTTP security headers           |
+| `@nestjs/throttler`              | 6        | Rate limiting                   |
+| Jest                             | 30       | Unit & E2E testing              |
 
 ### ☁️ Infrastructure & Tools
 
@@ -115,24 +115,24 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 
 ## ✨ Key Features
 
-| Feature | Description |
-|---|---|
-| 🔐 **JWT Auth + RBAC** | Access/refresh token flow. Three roles: `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| 🛒 **Order Management** | Create orders with multi-item transactions, stock validation, order history audit log |
-| 📦 **Product & Category Management** | Hierarchical categories (parent/child), Cloudinary image uploads, stock tracking |
-| 👥 **Customer Management** | Full customer CRM with contact details and order history |
-| 📊 **Analytics Dashboard** | Real-time stats: total orders, products, customers, revenue, recent orders, orders-by-status |
+| Feature                               | Description                                                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🔐 **JWT Auth + RBAC**                | Access/refresh token flow. Three roles: `SUPER_ADMIN`, `ADMIN`, `STAFF`                                                         |
+| 🛒 **Order Management**               | Create orders with multi-item transactions, stock validation, order history audit log                                           |
+| 📦 **Product & Category Management**  | Hierarchical categories (parent/child), Cloudinary image uploads, stock tracking                                                |
+| 👥 **Customer Management**            | Full customer CRM with contact details and order history                                                                        |
+| 📊 **Analytics Dashboard**            | Real-time stats: total orders, products, customers, revenue, recent orders, orders-by-status                                    |
 | 🔔 **Persistent Notification System** | DB-backed per-user notifications for every order lifecycle event; bell icon with unread badge, mark-as-read, delete, clear-read |
-| 🌗 **Dark / Light Mode** | One-click theme toggle persisted to `localStorage`; respects `prefers-color-scheme` on first load |
-| 🔴 **Real-Time WebSocket** | Socket.io pushes live `order:created`, `order:updated`, `dashboard:updated`, and `notification` events to all connected clients |
-| ⚡ **Redis Caching** | Upstash Redis reduces DB load on hot read paths with configurable TTL per resource |
-| 📤 **Export Reports** | Download orders/products as Excel (`.xlsx`) or PDF |
-| 📧 **Transactional Email** | Order confirmation & status-update emails sent via Resend |
-| 🖼️ **Avatar & Profile** | Users can upload/change their avatar (stored on Cloudinary); profile page for name & password management |
-| 🔑 **Forgot / Reset Password** | Token-based password reset flow with expiry, delivered via email |
-| 📱 **Responsive Layout** | Collapsible sidebar (desktop) + slide-in drawer (mobile) |
-| 🐳 **Docker Support** | Single `docker-compose up --build` starts both services locally |
-| 🧪 **Testing** | Jest unit tests for services; Playwright E2E test suite for the frontend |
+| 🌗 **Dark / Light Mode**              | One-click theme toggle persisted to `localStorage`; respects `prefers-color-scheme` on first load                               |
+| 🔴 **Real-Time WebSocket**            | Socket.io pushes live `order:created`, `order:updated`, `dashboard:updated`, and `notification` events to all connected clients |
+| ⚡ **Redis Caching**                  | Upstash Redis reduces DB load on hot read paths with configurable TTL per resource                                              |
+| 📤 **Export Reports**                 | Download orders/products as Excel (`.xlsx`) or PDF                                                                              |
+| 📧 **Transactional Email**            | Order confirmation & status-update emails sent via Resend                                                                       |
+| 🖼️ **Avatar & Profile**               | Users can upload/change their avatar (stored on Cloudinary); profile page for name & password management                        |
+| 🔑 **Forgot / Reset Password**        | Token-based password reset flow with expiry, delivered via email                                                                |
+| 📱 **Responsive Layout**              | Collapsible sidebar (desktop) + slide-in drawer (mobile)                                                                        |
+| 🐳 **Docker Support**                 | Single `docker-compose up --build` starts both services locally                                                                 |
+| 🧪 **Testing**                        | Jest unit tests for services; Playwright E2E test suite for the frontend                                                        |
 
 ---
 
@@ -198,7 +198,7 @@ A single `@Global()` `GatewayModule` registers the `EventsGateway` and exports i
 // backend/src/gateway/events.gateway.ts
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:5173', process.env.FRONTEND_URL || ''],
+    origin: ["http://localhost:5173", process.env.FRONTEND_URL || ""],
     credentials: true,
   },
 })
@@ -209,34 +209,56 @@ export class EventsGateway
   private connectedClients = 0;
 
   // Tracks active connections in server logs
-  handleConnection(client: Socket) { this.connectedClients++; }
-  handleDisconnect(client: Socket) { this.connectedClients--; }
+  handleConnection(client: Socket) {
+    this.connectedClients++;
+  }
+  handleDisconnect(client: Socket) {
+    this.connectedClients--;
+  }
 
   emitOrderCreated(order: { id; orderCode; totalPrice; customerName }) {
-    this.server.emit('order:created', { ...order, timestamp: new Date().toISOString() });
+    this.server.emit("order:created", {
+      ...order,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   emitOrderUpdated(order: { id; orderCode; status }) {
-    this.server.emit('order:updated', { ...order, timestamp: new Date().toISOString() });
+    this.server.emit("order:updated", {
+      ...order,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  emitDashboardUpdated(stats: { totalOrders; totalProducts; totalCustomers; revenue }) {
-    this.server.emit('dashboard:updated', { ...stats, timestamp: new Date().toISOString() });
+  emitDashboardUpdated(stats: {
+    totalOrders;
+    totalProducts;
+    totalCustomers;
+    revenue;
+  }) {
+    this.server.emit("dashboard:updated", {
+      ...stats,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  emitNotification(message: string, type: 'success' | 'info' | 'warning') {
-    this.server.emit('notification', { message, type, timestamp: new Date().toISOString() });
+  emitNotification(message: string, type: "success" | "info" | "warning") {
+    this.server.emit("notification", {
+      message,
+      type,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 ```
 
 ### Socket events reference
 
-| Event               | Direction            | Payload                                                              | Triggered by                                        |
-| ------------------- | -------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
-| `order:created`     | Server → All clients | `{ id, orderCode, totalPrice, customerName, timestamp }`             | `POST /api/orders`                                  |
-| `order:updated`     | Server → All clients | `{ id, orderCode, status, timestamp }`                               | `PATCH /api/orders/:id` (status change)             |
-| `dashboard:updated` | Server → All clients | `{ totalOrders, totalProducts, totalCustomers, revenue, timestamp }` | Dashboard data change                               |
+| Event               | Direction            | Payload                                                              | Triggered by                                                     |
+| ------------------- | -------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `order:created`     | Server → All clients | `{ id, orderCode, totalPrice, customerName, timestamp }`             | `POST /api/orders`                                               |
+| `order:updated`     | Server → All clients | `{ id, orderCode, status, timestamp }`                               | `PATCH /api/orders/:id` (status change)                          |
+| `dashboard:updated` | Server → All clients | `{ totalOrders, totalProducts, totalCustomers, revenue, timestamp }` | Dashboard data change                                            |
 | `notification`      | Server → All clients | `{ message, type, timestamp }`                                       | `POST /api/orders` and `PATCH /api/orders/:id` (transient toast) |
 
 ### Frontend: hooks & components
@@ -246,7 +268,7 @@ export class EventsGateway
 ```typescript
 // frontend/src/hooks/useSocket.ts
 const SOCKET_URL =
-  import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
 
 export function useSocket() {
   // transports: ['websocket', 'polling']
@@ -266,38 +288,41 @@ export function useRealtime() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('order:created', (data) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] }); // ← syncs bell
+    socket.on("order:created", (data) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }); // ← syncs bell
       toast.success(`🛒 New order: ${data.orderCode}`, {
         description: `$${Number(data.totalPrice).toLocaleString()} — ${data.customerName}`,
         duration: 5000,
       });
     });
 
-    socket.on('order:updated', (data) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['order', String(data.id)] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] }); // ← syncs bell
-      toast.info(`📦 Order ${data.orderCode}: ${data.status}`, { duration: 4000 });
+    socket.on("order:updated", (data) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["order", String(data.id)] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }); // ← syncs bell
+      toast.info(`📦 Order ${data.orderCode}: ${data.status}`, {
+        duration: 4000,
+      });
     });
 
-    socket.on('dashboard:updated', () =>
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] }));
+    socket.on("dashboard:updated", () =>
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    );
 
-    socket.on('notification', (data) => {
-      if (data.type === 'success') toast.success(data.message);
-      if (data.type === 'warning') toast.warning(data.message);
-      if (data.type === 'info')    toast.info(data.message);
+    socket.on("notification", (data) => {
+      if (data.type === "success") toast.success(data.message);
+      if (data.type === "warning") toast.warning(data.message);
+      if (data.type === "info") toast.info(data.message);
     });
 
     return () => {
-      socket.off('order:created');
-      socket.off('order:updated');
-      socket.off('dashboard:updated');
-      socket.off('notification');
+      socket.off("order:created");
+      socket.off("order:updated");
+      socket.off("dashboard:updated");
+      socket.off("notification");
     };
   }, [socket, queryClient]);
 
@@ -312,9 +337,11 @@ export function useRealtime() {
 export default function ConnectionStatus() {
   const { connected } = useRealtime();
   return (
-    <div title={connected ? 'Real-time connected' : 'Connecting...'}>
-      <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-      <span>{connected ? 'Live' : 'Connecting...'}</span>
+    <div title={connected ? "Real-time connected" : "Connecting..."}>
+      <div
+        className={`w-2 h-2 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+      />
+      <span>{connected ? "Live" : "Connecting..."}</span>
     </div>
   );
 }
@@ -364,22 +391,22 @@ Beyond transient toast pop-ups, the system stores a permanent per-user notificat
 
 The `NotificationsService` is injected into `OrdersService` and creates notifications for **all active ADMIN / SUPER_ADMIN users** on order lifecycle changes:
 
-| Order Event | Notification type | Triggered in |
-|---|---|---|
-| Order created | `order_created` | `OrdersService.create()` |
-| Status → PAID | `order_paid` | `OrdersService.update()` |
+| Order Event        | Notification type | Triggered in             |
+| ------------------ | ----------------- | ------------------------ |
+| Order created      | `order_created`   | `OrdersService.create()` |
+| Status → PAID      | `order_paid`      | `OrdersService.update()` |
 | Status → COMPLETED | `order_completed` | `OrdersService.update()` |
 | Status → CANCELLED | `order_cancelled` | `OrdersService.update()` |
 
 **Notification API endpoints** (`/api/notifications`, all require JWT):
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/notifications` | Get all notifications + unread count for the current user |
-| `PATCH` | `/notifications/:id/read` | Mark one notification as read |
-| `PATCH` | `/notifications/read-all` | Mark all notifications as read |
-| `DELETE` | `/notifications/:id` | Delete a single notification |
-| `DELETE` | `/notifications/clear/read` | Delete all read notifications |
+| Method   | Path                        | Description                                               |
+| -------- | --------------------------- | --------------------------------------------------------- |
+| `GET`    | `/notifications`            | Get all notifications + unread count for the current user |
+| `PATCH`  | `/notifications/:id/read`   | Mark one notification as read                             |
+| `PATCH`  | `/notifications/read-all`   | Mark all notifications as read                            |
+| `DELETE` | `/notifications/:id`        | Delete a single notification                              |
+| `DELETE` | `/notifications/clear/read` | Delete all read notifications                             |
 
 ```typescript
 // backend/src/notifications/notifications.service.ts (key methods)
@@ -413,12 +440,12 @@ The `NotificationBell` component in the header:
 - Shows a **red animated badge** for unread count (capped display at `99+`)
 - Displays a **dropdown panel** with up to 50 notifications, colour-coded by type:
 
-| Type | Icon | Colour |
-|---|---|---|
-| `order_created` | 🛒 ShoppingCart | Blue |
-| `order_paid` | 💳 CreditCard | Green |
-| `order_completed` | ✅ Check | Purple |
-| `order_cancelled` | ❌ XCircle | Red |
+| Type              | Icon            | Colour |
+| ----------------- | --------------- | ------ |
+| `order_created`   | 🛒 ShoppingCart | Blue   |
+| `order_paid`      | 💳 CreditCard   | Green  |
+| `order_completed` | ✅ Check        | Purple |
+| `order_cancelled` | ❌ XCircle      | Red    |
 
 - Clicking a notification **marks it as read** and **navigates** to the relevant order (`/orders/:id`) if `metadata.orderId` is present
 - Header actions: **Mark all as read** (CheckCheck icon), **Clear read** (Trash2 icon)
@@ -431,22 +458,24 @@ The UI supports a full dark / light theme toggle powered by **Zustand** (`useThe
 
 ### How it works
 
-1. On app load, `theme.store.ts` reads the saved preference from `localStorage` (`"theme"` key).  
+1. On app load, `theme.store.ts` reads the saved preference from `localStorage` (`"theme"` key).
 2. If no preference is found, it falls back to the system's `prefers-color-scheme` media query.
 3. The resolved theme is applied immediately by toggling the `dark` class on `<html>` before React renders — **no flash of wrong theme**.
 4. Clicking `ThemeToggle` (☀️ / 🌙 button in the header) calls `toggle()`, which flips the class and persists the new value to `localStorage`.
 
 ```typescript
 // frontend/src/store/theme.store.ts
-function applyTheme(theme: 'light' | 'dark') {
-  document.documentElement.classList.toggle('dark', theme === 'dark');
-  localStorage.setItem('theme', theme);
+function applyTheme(theme: "light" | "dark") {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+  localStorage.setItem("theme", theme);
 }
 
-function getInitialTheme(): 'light' | 'dark' {
-  const saved = localStorage.getItem('theme');
-  if (saved) return saved as 'light' | 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+function getInitialTheme(): "light" | "dark" {
+  const saved = localStorage.getItem("theme");
+  if (saved) return saved as "light" | "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 // Applied before React hydrates — eliminates FOUC
@@ -460,16 +489,25 @@ applyTheme(initialTheme);
 
 ```css
 /* Smooth theme transition on every element */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   transition-property: background-color, border-color, color;
   transition-duration: 150ms;
   transition-timing-function: ease;
 }
 
 /* Dark mode custom scrollbar */
-.dark ::-webkit-scrollbar       { width: 6px; }
-.dark ::-webkit-scrollbar-track { background: #1e293b; }
-.dark ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
 ```
 
 The entire component library uses Tailwind's `dark:` variants (e.g. `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`), ensuring consistent theming across the Sidebar, Header, all pages, and every dropdown/modal.
@@ -497,23 +535,23 @@ static readonly TTL = {
 
 ### Cache operations
 
-| Method | Description |
-|---|---|
-| `get<T>(key)` | Read a value from Redis. Returns `null` on miss or error. |
-| `set(key, value, ttl)` | Write a value with a TTL using `SETEX`. |
-| `del(key)` | Invalidate a single cache key. |
-| `delPattern(pattern)` | Invalidate all keys matching a glob pattern (e.g. `orders:*`). |
+| Method                        | Description                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `get<T>(key)`                 | Read a value from Redis. Returns `null` on miss or error.                                      |
+| `set(key, value, ttl)`        | Write a value with a TTL using `SETEX`.                                                        |
+| `del(key)`                    | Invalidate a single cache key.                                                                 |
+| `delPattern(pattern)`         | Invalidate all keys matching a glob pattern (e.g. `orders:*`).                                 |
 | `getOrSet(key, ttl, fetcher)` | Read-through helper: returns cached value or calls `fetcher()`, stores result, and returns it. |
 
 ### Cache strategy per module
 
-| Module | Keys | TTL | Invalidated on |
-|---|---|---|---|
-| **Dashboard** | `dashboard:summary` | 5 min | Order create / update / delete |
-| **Orders** | `orders:<search>:<page>:<limit>`, `orders:<id>` | 2 min | Order create / update / cancel |
-| **Products** | `products:list:*`, `products:detail:*` | 5 min | Product create / update / delete |
-| **Categories** | `categories:all`, `categories:<id>` | 30 min | Category / product mutation |
-| **Customers** | `customers:*` | 5 min | Customer create / update / delete |
+| Module         | Keys                                            | TTL    | Invalidated on                    |
+| -------------- | ----------------------------------------------- | ------ | --------------------------------- |
+| **Dashboard**  | `dashboard:summary`                             | 5 min  | Order create / update / delete    |
+| **Orders**     | `orders:<search>:<page>:<limit>`, `orders:<id>` | 2 min  | Order create / update / cancel    |
+| **Products**   | `products:list:*`, `products:detail:*`          | 5 min  | Product create / update / delete  |
+| **Categories** | `categories:all`, `categories:<id>`             | 30 min | Category / product mutation       |
+| **Customers**  | `customers:*`                                   | 5 min  | Customer create / update / delete |
 
 > **Graceful degradation:** If `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` are not set, `CacheService` silently disables itself — the application continues to work normally without caching.
 
@@ -672,16 +710,16 @@ erDiagram
 
 ### `notifications` table — new in this release
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | `Int PK` | Auto-increment primary key |
-| `title` | `String` | Short notification title (e.g. `"🛒 New Order Received"`) |
-| `message` | `String` | Full human-readable message |
-| `type` | `String` | Event type: `order_created`, `order_paid`, `order_completed`, `order_cancelled` |
-| `isRead` | `Boolean` | Read/unread flag, defaults to `false` |
-| `metadata` | `Json?` | Arbitrary context — e.g. `{ orderId, orderCode, status }` for navigation |
-| `userId` | `Int FK` | Recipient user (cascades on user delete) |
-| `createdAt` | `DateTime` | Timestamp |
+| Column      | Type       | Description                                                                     |
+| ----------- | ---------- | ------------------------------------------------------------------------------- |
+| `id`        | `Int PK`   | Auto-increment primary key                                                      |
+| `title`     | `String`   | Short notification title (e.g. `"🛒 New Order Received"`)                       |
+| `message`   | `String`   | Full human-readable message                                                     |
+| `type`      | `String`   | Event type: `order_created`, `order_paid`, `order_completed`, `order_cancelled` |
+| `isRead`    | `Boolean`  | Read/unread flag, defaults to `false`                                           |
+| `metadata`  | `Json?`    | Arbitrary context — e.g. `{ orderId, orderCode, status }` for navigation        |
+| `userId`    | `Int FK`   | Recipient user (cascades on user delete)                                        |
+| `createdAt` | `DateTime` | Timestamp                                                                       |
 
 ---
 

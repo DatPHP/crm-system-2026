@@ -14,6 +14,7 @@ import { MailModule } from './mail/mail.module';
 import { CacheModule } from './cache/cache.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MailModule,
     GatewayModule,
     NotificationsModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

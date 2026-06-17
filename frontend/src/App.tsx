@@ -16,6 +16,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
+import AuditLogsPage from "./pages/AuditLogsPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="orders/create" element={<CreateOrderPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="audit-logs" element={<AuditLogsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

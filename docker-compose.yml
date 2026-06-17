@@ -24,6 +24,8 @@ services:
       MAIL_PASSWORD: "${MAIL_PASSWORD}"
       UPSTASH_REDIS_REST_URL: "${UPSTASH_REDIS_REST_URL}"
       UPSTASH_REDIS_REST_TOKEN: "${UPSTASH_REDIS_REST_TOKEN}"
+      SENTRY_DSN: "${SENTRY_DSN}"
+      NODE_ENV: "development"
     ports:
       - "3000:3000"
     volumes:
@@ -38,6 +40,7 @@ services:
       target: builder
       args:
         VITE_API_URL: "http://localhost:3000/api"
+        VITE_SENTRY_DSN: "${VITE_SENTRY_DSN}"
     container_name: crm_frontend
     restart: unless-stopped
     ports:

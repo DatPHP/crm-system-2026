@@ -31,6 +31,8 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.1.26",
     "@prisma/client": "^6.19.3",
+    "@sentry/nestjs": "^10.58.0",
+    "@sentry/profiling-node": "^10.58.0",
     "@types/exceljs": "^0.5.3",
     "@types/pdfkit": "^0.17.6",
     "@upstash/redis": "^1.38.0",

@@ -19,17 +19,17 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(ADMIN)  // đổi từ String sang Role
+  role      Role     @default(ADMIN) // đổi từ String sang Role
   avatar    String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders         Order[]        @relation("CreatedByUser")
-  orderHistories OrderHistory[] @relation("HistoryByUser")
-  refreshTokens  RefreshToken[]
+  orders             Order[]             @relation("CreatedByUser")
+  orderHistories     OrderHistory[]      @relation("HistoryByUser")
+  refreshTokens      RefreshToken[]
   passwordResetToken PasswordResetToken?
-  notifications   Notification[]
+  notifications      Notification[]
 
   @@map("users")
 }
@@ -60,9 +60,9 @@ model Category {
   createdAt   DateTime @default(now())
 
   // Self relation — parent/child category
-  parentId   Int?
-  parent     Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
-  children   Category[] @relation("CategoryChildren")
+  parentId Int?
+  parent   Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryChildren")
 
   // Relations
   products Product[]
@@ -72,15 +72,15 @@ model Category {
 
 // ==================== PRODUCTS ====================
 model Product {
-  id            Int      @id @default(autoincrement())
-  title         String
-  sku           String   @unique
-  description   String?
+  id          Int     @id @default(autoincrement())
+  title       String
+  sku         String  @unique
+  description String?
 
   // Image fields
-  image         String?  // URL chính
-  imagePublicId String?  // Cloudinary public_id để xóa ảnh
-  thumbnail     String?  // URL thumbnail (Cloudinary auto-generate)
+  image         String? // URL chính
+  imagePublicId String? // Cloudinary public_id để xóa ảnh
+  thumbnail     String? // URL thumbnail (Cloudinary auto-generate)
 
   price         Decimal  @db.Decimal(10, 2)
   stockQuantity Int      @default(0)
@@ -90,19 +90,20 @@ model Product {
 
   // Relations
   categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
 
   @@map("products")
 }
+
 // ==================== ORDERS ====================
 model Order {
-  id         Int      @id @default(autoincrement())
-  orderCode  String   @unique
-  totalPrice Decimal  @db.Decimal(10, 2)
+  id         Int         @id @default(autoincrement())
+  orderCode  String      @unique
+  totalPrice Decimal     @db.Decimal(10, 2)
   status     OrderStatus @default(PENDING)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   // Relations
   customerId Int
@@ -132,8 +133,8 @@ model OrderItem {
   subtotal  Decimal @db.Decimal(10, 2)
 
   // Relations
-  orderId   Int
-  order     Order   @relation(fields: [orderId], references: [id])
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id])
 
   productId Int
   product   Product @relation(fields: [productId], references: [id])
@@ -144,7 +145,7 @@ model OrderItem {
 // ==================== ORDER HISTORY ====================
 model OrderHistory {
   id          Int      @id @default(autoincrement())
-  action      String   // ORDER_CREATED, ORDER_CANCELLED, etc.
+  action      String // ORDER_CREATED, ORDER_CANCELLED, etc.
   description String?
   createdAt   DateTime @default(now())
 
@@ -157,6 +158,7 @@ model OrderHistory {
 
   @@map("order_histories")
 }
+
 // ==================== REFRESH TOKENS ====================
 model RefreshToken {
   id        Int      @id @default(autoincrement())
@@ -168,6 +170,7 @@ model RefreshToken {
 
   @@map("refresh_tokens")
 }
+
 // ==================== PASSWORD RESET TOKENS ====================
 model PasswordResetToken {
   id        Int      @id @default(autoincrement())
@@ -184,13 +187,34 @@ model Notification {
   id        Int      @id @default(autoincrement())
   title     String
   message   String
-  type      String   // order_created, order_paid, order_completed, order_cancelled
+  type      String // order_created, order_paid, order_completed, order_cancelled
   isRead    Boolean  @default(false)
-  metadata  Json?    // { orderId, orderCode, ... }
+  metadata  Json? // { orderId, orderCode, ... }
   createdAt DateTime @default(now())
 
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String // CREATE | UPDATE | DELETE
+  entity    String // Order | Product | Customer | Category | User
+  entityId  Int?
+  before    Json?
+  after     Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  userId   Int
+  userName String
+  userRole String
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
