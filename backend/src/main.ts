@@ -5,6 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
+import { AuditInterceptor } from './audit/audit.interceptor';
+import { AuditService } from './audit/audit.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,31 +14,30 @@ async function bootstrap() {
   // Security
   app.use(helmet());
 
-  // CORS — cho phép frontend gọi API
+  // CORS
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      process.env.FRONTEND_URL || '', // thêm dòng này
-    ].filter(Boolean),
+    origin: ['http://localhost:5173', process.env.FRONTEND_URL || ''].filter(
+      Boolean,
+    ),
     credentials: true,
   });
 
-  // Global prefix — tất cả API đều bắt đầu bằng /api
   app.setGlobalPrefix('api');
 
-  // Validation pipe — tự động validate DTO
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // bỏ field lạ
+      whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true, // auto convert type
+      transform: true,
     }),
   );
 
-  // Global exception filter — bắt tất cả lỗi, trả về JSON chuẩn
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Swagger UI tại /api/docs
+  // ← THÊM: Đăng ký Audit Interceptor global
+  const auditService = app.get(AuditService);
+  app.useGlobalInterceptors(new AuditInterceptor(auditService));
+
   const config = new DocumentBuilder()
     .setTitle('CRM API')
     .setDescription('CRM Order Management System API')
