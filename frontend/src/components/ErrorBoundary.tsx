@@ -19,10 +19,12 @@ function Fallback() {
   );
 }
 
-function ErrorBoundaryWrapper({ children }: { children: React.ReactNode }) {
+export function ErrorBoundaryWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default Sentry.withErrorBoundary(ErrorBoundaryWrapper, {
+const ErrorBoundary = Sentry.withErrorBoundary(ErrorBoundaryWrapper, {
   fallback: <Fallback />,
 });
+
+export default ErrorBoundary;

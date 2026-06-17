@@ -5,23 +5,24 @@ import {
   Package,
   Users,
   ShoppingCart,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuthStore } from "../store/auth.store";
-import { ShieldCheck } from "lucide-react";
-
-const { user } = useAuthStore();
-const menuItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/categories", icon: Tag, label: "Categories" },
-  { to: "/products", icon: Package, label: "Products" },
-  { to: "/customers", icon: Users, label: "Customers" },
-  { to: "/orders", icon: ShoppingCart, label: "Orders" },
-  ...(user?.role === "SUPER_ADMIN"
-    ? [{ to: "/audit-logs", icon: ShieldCheck, label: "Audit Logs" }]
-    : []),
-];
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
+  const { user } = useAuthStore(); // ← di chuyển vào đây
+
+  const menuItems = [
+    { to: "/dashboard",  icon: LayoutDashboard, label: "Dashboard"  },
+    { to: "/categories", icon: Tag,             label: "Categories" },
+    { to: "/products",   icon: Package,         label: "Products"   },
+    { to: "/customers",  icon: Users,           label: "Customers"  },
+    { to: "/orders",     icon: ShoppingCart,    label: "Orders"     },
+    ...(user?.role === "SUPER_ADMIN"
+      ? [{ to: "/audit-logs", icon: ShieldCheck, label: "Audit Logs" }]
+      : []),
+  ];
+
   return (
     <aside
       className={`
