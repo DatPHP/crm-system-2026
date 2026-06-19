@@ -54,6 +54,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![React Query](https://img.shields.io/badge/React_Query_v5-FF4154?style=for-the-badge&logo=ReactQuery&logoColor=white)
 ![Zustand](https://img.shields.io/badge/Zustand_v5-20232A?style=for-the-badge&logo=react&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io_Client-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white)
 
 | Library                               | Version | Purpose                            |
 | ------------------------------------- | ------- | ---------------------------------- |
@@ -72,6 +73,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 | Geist Variable Font                   | –       | Typography                         |
 | Axios                                 | 1       | HTTP client                        |
 | Playwright                            | 1.60    | End-to-end testing                 |
+| Sentry React                          | 10      | Error tracking & performance       |
 
 ### ⚙️ Backend
 
@@ -83,6 +85,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 ![Resend](https://img.shields.io/badge/Resend-black?style=for-the-badge&logo=minutemailer&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io_Server-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white)
 
 | Library                          | Version  | Purpose                         |
 | -------------------------------- | -------- | ------------------------------- |
@@ -100,6 +103,7 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 | Helmet                           | 8        | HTTP security headers           |
 | `@nestjs/throttler`              | 6        | Rate limiting                   |
 | Jest                             | 30       | Unit & E2E testing              |
+| Sentry NestJS                    | 10       | Error tracking & profiling      |
 
 ### ☁️ Infrastructure & Tools
 
@@ -117,6 +121,8 @@ Our tech stack is carefully chosen to ensure scalability, type safety, and an ex
 
 | Feature                               | Description                                                                                                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🛡️ **Error Tracking**                 | Sentry integration on both frontend and backend for real-time error tracking and performance profiling                          |
+| 🕵️ **Audit Logs**                     | Detailed tracking of all entity mutations (create/update/delete) with before/after state capture                                |
 | 🔐 **JWT Auth + RBAC**                | Access/refresh token flow. Three roles: `SUPER_ADMIN`, `ADMIN`, `STAFF`                                                         |
 | 🛒 **Order Management**               | Create orders with multi-item transactions, stock validation, order history audit log                                           |
 | 📦 **Product & Category Management**  | Hierarchical categories (parent/child), Cloudinary image uploads, stock tracking                                                |
@@ -177,6 +183,8 @@ graph TD
         Services -->|Upload Image| Cloudinary[Cloudinary]
         Services -->|Send Email| Resend[Resend API]
         Cache -->|GET / SET / DEL| Redis[(Upstash Redis)]
+        API -->|Error Tracking| Sentry[Sentry]
+        Components -->|Error Tracking| Sentry
     end
 
     subgraph Database
@@ -691,7 +699,23 @@ erDiagram
         DateTime createdAt
     }
 
+    audit_logs {
+        Int id PK
+        String action
+        String entity
+        Int entityId
+        Json before
+        Json after
+        String ipAddress
+        String userAgent
+        DateTime createdAt
+        Int userId FK
+        String userName
+        String userRole
+    }
+
     users ||--o{ orders : "creates"
+    users ||--o{ audit_logs : "performs"
     users ||--o{ order_histories : "logs"
     users ||--o{ refresh_tokens : "owns"
     users ||--o| password_reset_tokens : "owns"
@@ -720,6 +744,23 @@ erDiagram
 | `metadata`  | `Json?`    | Arbitrary context — e.g. `{ orderId, orderCode, status }` for navigation        |
 | `userId`    | `Int FK`   | Recipient user (cascades on user delete)                                        |
 | `createdAt` | `DateTime` | Timestamp                                                                       |
+
+### `audit_logs` table — new in this release
+
+| Column      | Type       | Description                                                                     |
+| ----------- | ---------- | ------------------------------------------------------------------------------- |
+| `id`        | `Int PK`   | Auto-increment primary key                                                      |
+| `action`    | `String`   | Event type: `CREATE`, `UPDATE`, `DELETE`                                        |
+| `entity`    | `String`   | Entity name (e.g. `Order`, `Product`, `Customer`)                               |
+| `entityId`  | `Int?`     | ID of the entity that was mutated                                               |
+| `before`    | `Json?`    | State of the entity before mutation                                             |
+| `after`     | `Json?`    | State of the entity after mutation                                              |
+| `ipAddress` | `String?`  | IP address of the user who performed the action                                 |
+| `userAgent` | `String?`  | User agent string of the user who performed the action                          |
+| `createdAt` | `DateTime` | Timestamp                                                                       |
+| `userId`    | `Int FK`   | User who performed the action                                                   |
+| `userName`  | `String`   | Name of the user (denormalized for safety)                                      |
+| `userRole`  | `String`   | Role of the user at the time of action                                          |
 
 ---
 
@@ -885,7 +926,9 @@ crm-system/
     ├── src/
     │   ├── main.ts               # Bootstrap: Swagger, CORS, pipes, Helmet
     │   ├── app.module.ts         # Root module (imports all feature modules)
+    │   ├── instrument.ts         # 🛡️ Sentry profiling & tracing setup
     │   │
+    │   ├── audit/                # 🕵️ Audit log tracking (mutations)
     │   ├── auth/                 # JWT auth: login, register, refresh, forgot/reset password
     │   ├── cache/                # ⚡ Global Redis cache (Upstash)
     │   │   ├── cache.module.ts   #   @Global() module
